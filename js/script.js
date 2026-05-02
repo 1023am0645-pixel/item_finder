@@ -11,10 +11,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const isKakaoLoggedIn = localStorage.getItem('kc_logged_in') === 'true';
     if (isKakaoLoggedIn && loginOverlay) {
         loginOverlay.style.display = 'none';
-        // 자동 로그인 시에도 클라우드 데이터 동기화
-        if (window.loadFromCloud) {
-            window.loadFromCloud().then(() => {
-                updateAppTitle();
+        // 자동 로그인 시 클라우드 데이터 동기화 (세션당 1회만 새로고침)
+        const cloudSynced = sessionStorage.getItem('cloud_synced');
+        if (!cloudSynced && window.loadFromCloud) {
+            sessionStorage.setItem('cloud_synced', 'true');
+            window.loadFromCloud().then((loaded) => {
+                if (loaded) {
+                    window.location.reload();
+                } else {
+                    updateAppTitle();
+                }
             }).catch(() => { updateAppTitle(); });
         } else {
             updateAppTitle();
