@@ -1,4 +1,4 @@
-const CACHE_NAME = 'item-finder-v3';
+const CACHE_NAME = 'item-finder-v4';
 const urlsToCache = [
   './',
   './index.html',

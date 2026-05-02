@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnKakaoLogin = document.getElementById('btnKakaoLogin');
     
     // Check if already authenticated in this session
-    const isKakaoLoggedIn = sessionStorage.getItem('kc_logged_in') === 'true';
+    const isKakaoLoggedIn = localStorage.getItem('kc_logged_in') === 'true';
     if (isKakaoLoggedIn && loginOverlay) {
         loginOverlay.style.display = 'none';
     }
@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Only show nickname input if we don't have one stored (first time user)
         const storedNick = localStorage.getItem('kc_nickname');
         if (storedNick) {
-            sessionStorage.setItem('kc_logged_in', 'true');
+            localStorage.setItem('kc_logged_in', 'true');
             updateAppTitle();
             loginOverlay.style.opacity = '0';
             setTimeout(() => {
@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         btnStartWithNickname.onclick = () => {
             const finalNick = loginNickname.value.trim() || '회원';
-            sessionStorage.setItem('kc_logged_in', 'true');
+            localStorage.setItem('kc_logged_in', 'true');
             localStorage.setItem('kc_nickname', finalNick);
             updateAppTitle();
             loginOverlay.style.opacity = '0';
@@ -169,7 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         btnKakaoLogout.addEventListener('click', () => {
             if(confirm('정말 로그아웃 하시겠습니까? 닉네임과 로그인 정보가 초기화됩니다.')) {
-                sessionStorage.removeItem('kc_logged_in');
+                localStorage.removeItem('kc_logged_in');
                 localStorage.removeItem('kc_nickname');
                 if (window.Kakao && window.Kakao.Auth.getAccessToken()) {
                     window.Kakao.Auth.logout(() => {
@@ -200,7 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
 
-                sessionStorage.removeItem('kc_logged_in');
+                localStorage.removeItem('kc_logged_in');
                 if (window.Kakao && window.Kakao.Auth.getAccessToken()) {
                     window.Kakao.Auth.logout(() => {
                         window.location.reload();
