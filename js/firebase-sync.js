@@ -1,141 +1,91 @@
 /**
- * Firebase Cloud Sync for 물건어디
- * - Uses Firebase Firestore to store data per Kakao user ID
- * - Automatically syncs localStorage data to cloud on save
- * - Loads cloud data on login
+ * Supabase Cloud Sync for 물건어디
+ * - 카카오 사용자 ID 기준으로 Supabase에 데이터 저장/불러오기
  */
 
-// Firebase configuration
-const firebaseConfig = {
-    apiKey: "AIzaSyBxQxQxQxQxQxQxQxQxQxQxQxQxQxQxQxQ",
-    authDomain: "item-finder-app.firebaseapp.com",
-    projectId: "item-finder-app",
-    storageBucket: "item-finder-app.appspot.com",
-    messagingSenderId: "123456789",
-    appId: "1:123456789:web:abcdef123456"
-};
+const SUPABASE_URL = 'https://koddftotebkjomwmauly.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_r_2SdgNd8Rl5nHexSEGxAQ_KX-zJE2I';
 
-let db = null;
 let currentUserId = null;
 
-// Initialize Firebase
-function initFirebase() {
-    try {
-        if (typeof firebase !== 'undefined' && !firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-            db = firebase.firestore();
-            console.log('[Firebase] 초기화 완료');
-        } else if (typeof firebase !== 'undefined' && firebase.apps.length) {
-            db = firebase.firestore();
-        }
-    } catch (e) {
-        console.warn('[Firebase] 초기화 실패 - 로컬 저장만 사용됩니다:', e.message);
-    }
-}
+const headers = {
+    'apikey': SUPABASE_KEY,
+    'Authorization': 'Bearer ' + SUPABASE_KEY,
+    'Content-Type': 'application/json',
+    'Prefer': 'resolution=merge-duplicates'
+};
 
-// Set current user ID (called after Kakao login)
 function setCloudUserId(kakaoUserId) {
     currentUserId = String(kakaoUserId);
     localStorage.setItem('kc_user_id', currentUserId);
-    console.log('[Firebase] 사용자 ID 설정:', currentUserId);
 }
 
-// Save data to Firestore
 async function syncToCloud() {
-    if (!db || !currentUserId) {
-        console.log('[Firebase] DB 또는 사용자 ID 없음 - 로컬만 저장');
-        return;
-    }
-    
+    if (!currentUserId) return;
+
     try {
-        const items = JSON.parse(localStorage.getItem('itemFinder_data') || '[]');
-        const rooms = JSON.parse(localStorage.getItem('itemFinder_rooms') || '[]');
-        const nickname = localStorage.getItem('kc_nickname') || '';
-        const theme = localStorage.getItem('itemFinder_theme') || 'light';
-        
-        await db.collection('users').doc(currentUserId).set({
-            items: items,
-            rooms: rooms,
-            nickname: nickname,
-            theme: theme,
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-            itemCount: items.length
-        }, { merge: true });
-        
-        console.log(`[Firebase] 클라우드 동기화 완료 (${items.length}개 물건)`);
+        const payload = {
+            user_id: currentUserId,
+            items: JSON.parse(localStorage.getItem('itemFinder_data') || '[]'),
+            rooms: JSON.parse(localStorage.getItem('itemFinder_rooms') || '[]'),
+            nickname: localStorage.getItem('kc_nickname') || '',
+            theme: localStorage.getItem('itemFinder_theme') || 'light',
+            updated_at: new Date().toISOString()
+        };
+
+        await fetch(`${SUPABASE_URL}/rest/v1/user_data`, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(payload)
+        });
     } catch (e) {
-        console.warn('[Firebase] 클라우드 저장 실패:', e.message);
+        console.warn('[Supabase] 저장 실패:', e.message);
     }
 }
 
-// Load data from Firestore
 async function loadFromCloud() {
-    if (!db || !currentUserId) {
-        console.log('[Firebase] DB 또는 사용자 ID 없음 - 로컬 데이터 사용');
-        return false;
-    }
-    
+    if (!currentUserId) return false;
+
     try {
-        const doc = await db.collection('users').doc(currentUserId).get();
-        
-        if (doc.exists) {
-            const data = doc.data();
-            
-            // Merge strategy: cloud data wins if local is empty, otherwise ask user
-            const localItems = JSON.parse(localStorage.getItem('itemFinder_data') || '[]');
-            const cloudItems = data.items || [];
-            
-            if (localItems.length === 0 && cloudItems.length > 0) {
-                // Local is empty, load from cloud
-                localStorage.setItem('itemFinder_data', JSON.stringify(cloudItems));
-                if (data.rooms && data.rooms.length > 0) {
-                    localStorage.setItem('itemFinder_rooms', JSON.stringify(data.rooms));
-                }
-                if (data.nickname) {
-                    localStorage.setItem('kc_nickname', data.nickname);
-                }
-                if (data.theme) {
-                    localStorage.setItem('itemFinder_theme', data.theme);
-                }
-                console.log(`[Firebase] 클라우드에서 ${cloudItems.length}개 물건 로드 완료`);
-                return true;
-            } else if (localItems.length > 0 && cloudItems.length > 0) {
-                // Both have data - merge by combining unique items
-                const mergedMap = new Map();
-                cloudItems.forEach(item => mergedMap.set(item.id, item));
-                localItems.forEach(item => mergedMap.set(item.id, item)); // local wins on conflict
-                const merged = Array.from(mergedMap.values());
-                localStorage.setItem('itemFinder_data', JSON.stringify(merged));
-                console.log(`[Firebase] 데이터 병합 완료 (${merged.length}개 물건)`);
-                
-                // Sync merged result back to cloud
-                setTimeout(() => syncToCloud(), 1000);
-                return true;
-            }
-        } else {
-            // No cloud data, upload local data
-            console.log('[Firebase] 클라우드에 데이터 없음 - 로컬 데이터 업로드');
+        const res = await fetch(
+            `${SUPABASE_URL}/rest/v1/user_data?user_id=eq.${currentUserId}&select=*`,
+            { headers: headers }
+        );
+        const data = await res.json();
+
+        if (!data || data.length === 0) {
             await syncToCloud();
+            return false;
         }
-        
-        return false;
+
+        const cloud = data[0];
+        const localItems = JSON.parse(localStorage.getItem('itemFinder_data') || '[]');
+        const cloudItems = cloud.items || [];
+
+        if (localItems.length === 0 && cloudItems.length > 0) {
+            localStorage.setItem('itemFinder_data', JSON.stringify(cloudItems));
+            localStorage.setItem('itemFinder_rooms', JSON.stringify(cloud.rooms || []));
+            if (cloud.nickname) localStorage.setItem('kc_nickname', cloud.nickname);
+            if (cloud.theme) localStorage.setItem('itemFinder_theme', cloud.theme);
+        } else if (localItems.length > 0 && cloudItems.length > 0) {
+            const mergedMap = new Map();
+            cloudItems.forEach(item => mergedMap.set(item.id, item));
+            localItems.forEach(item => mergedMap.set(item.id, item));
+            localStorage.setItem('itemFinder_data', JSON.stringify(Array.from(mergedMap.values())));
+            setTimeout(() => syncToCloud(), 1000);
+        }
+
+        return true;
     } catch (e) {
-        console.warn('[Firebase] 클라우드 로드 실패:', e.message);
+        console.warn('[Supabase] 불러오기 실패:', e.message);
         return false;
     }
 }
 
-// Make functions globally available
 window.syncToCloud = syncToCloud;
 window.loadFromCloud = loadFromCloud;
 window.setCloudUserId = setCloudUserId;
-window.initFirebase = initFirebase;
 
-// Auto-initialize
-initFirebase();
-
-// Restore user ID if available
+// 저장된 사용자 ID 복원
 const storedUserId = localStorage.getItem('kc_user_id');
-if (storedUserId) {
-    currentUserId = storedUserId;
-}
+if (storedUserId) currentUserId = storedUserId;
