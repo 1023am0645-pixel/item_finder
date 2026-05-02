@@ -7,10 +7,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginOverlay = document.getElementById('loginOverlay');
     const btnKakaoLogin = document.getElementById('btnKakaoLogin');
     
-    // Check if already authenticated in this session
+    // Check if already authenticated
     const isKakaoLoggedIn = localStorage.getItem('kc_logged_in') === 'true';
     if (isKakaoLoggedIn && loginOverlay) {
         loginOverlay.style.display = 'none';
+        // 자동 로그인 시에도 클라우드 데이터 동기화
+        if (window.loadFromCloud) {
+            window.loadFromCloud().then(() => {
+                updateAppTitle();
+            }).catch(() => { updateAppTitle(); });
+        } else {
+            updateAppTitle();
+        }
     }
 
     if (btnKakaoLogin) {
