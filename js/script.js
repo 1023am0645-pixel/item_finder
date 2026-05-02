@@ -81,20 +81,20 @@ document.addEventListener('DOMContentLoaded', () => {
         btnKakaoLogin.style.display = 'none';
         nickInputStep.style.display = 'flex';
         
-        btnStartWithNickname.onclick = async () => {
+        btnStartWithNickname.onclick = () => {
             const finalNick = loginNickname.value.trim() || '회원';
             sessionStorage.setItem('kc_logged_in', 'true');
             localStorage.setItem('kc_nickname', finalNick);
             updateAppTitle();
-            // Sync nickname to cloud
-            if (window.syncToCloud) {
-                try { await window.syncToCloud(); } catch(e) {}
-            }
             loginOverlay.style.opacity = '0';
             setTimeout(() => {
                 loginOverlay.style.display = 'none';
                 showToast(`환영합니다, ${finalNick}님!`);
             }, 400);
+            // 백그라운드에서 클라우드 싱크 (화면 전환 블로킹 없음)
+            if (window.syncToCloud) {
+                window.syncToCloud().catch(() => {});
+            }
         };
     }
 
