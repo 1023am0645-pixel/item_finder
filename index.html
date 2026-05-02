@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#ff8c42">
+    <title>물건어디 - 내 물건 찾기</title>
+    <link rel="manifest" href="manifest.json">
+    <!-- iOS PWA 지원 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="물건어디">
+    <link rel="apple-touch-icon" href="assets/hero.png">
+    <!-- Android PWA 설명 -->
+    <meta name="description" content="우리집 물건 위치를 저장하고 찾아주는 홈 인벤토리 앱">
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;800;900&family=Nanum+Pen+Script&family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://t1.kakaocdn.net/kakao_js_sdk/1.43.1/kakao.min.js"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script>
+        // Apply saved theme BEFORE page renders (prevents flash of light mode)
+        (function() {
+            var savedTheme = localStorage.getItem('itemFinder_theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+    </script>
+</head>
+<body>
+    <!-- 카카오톡 로그인 오버레이 -->
+    <div id="loginOverlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:var(--surface-color);backdrop-filter:blur(10px);z-index:9999;display:flex;flex-direction:column;justify-content:center;align-items:center;transition:all 0.5s ease;">
+        <img src="assets/hero.png" alt="mascot" style="width: 280px; height: 280px; object-fit: contain; margin-bottom: 2rem; border-radius: 24px; box-shadow: var(--shadow-lg);">
+        <h1 class="app-main-title logo" style="color:var(--text-main);font-size:3rem;margin-bottom:0.2rem; font-family:'Nanum Pen Script', cursive;">물건어디<span style="color:#ff8c42;margin-left:4px; font-weight:900; font-size:1.2em;">?</span></h1>
+        <p style="color:var(--text-muted);font-weight:500;margin-bottom:2.5rem;font-size:0.9rem;text-align:center;">우리집 물건 위치 저장하기</p>
+        <div id="nicknameInputStep" style="display:none; flex-direction:column; align-items:center; width:80%; max-width:300px;">
+            <input type="text" id="loginNickname" placeholder="사용할 닉네임을 입력해주세요" style="width:100%; padding:14px; border-radius:12px; border:2px solid #FEE500; margin-bottom:1rem; font-size:1rem; outline:none; text-align:center;">
+            <button id="btnStartWithNickname" style="width:100%; background:#FEE500; color:#000; border:none; border-radius:12px; padding:14px; font-size:1.1rem; font-weight:600; cursor:pointer;">시작하기</button>
+        </div>
+        <button id="btnKakaoLogin" style="background:#FEE500;color:#000000;border:none;border-radius:12px;padding:14px 28px;font-size:1.1rem;font-weight:600;display:flex;align-items:center;gap:10px;cursor:pointer;box-shadow:0 4px 6px rgba(0,0,0,0.1);transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 3c-5.52 0-10 3.58-10 8 0 2.86 1.83 5.37 4.6 6.78-.3.97-1.12 3.65-1.14 3.75-.03.14.05.21.16.2.14-.02 3.86-2.58 5.34-3.6.35.04.7.07 1.04.07 5.52 0 10-3.58 10-8s-4.48-8-10-8z"/>
+            </svg> 카카오톡으로 시작하기
+        </button>
+    </div>
+
+    <div class="app-container">
+        <!-- 상단 타이틀 -->
+        <header>
+            <div class="header-top" style="position: relative; justify-content: center; height: 35px; display: flex; align-items: center;">
+                <h1 class="logo app-main-title" style="font-family:'Nanum Pen Script', cursive; font-size:2.5rem;">물건어디<span class="q-mark" style="color: #ff8c42;">?</span></h1>
+                <div style="position: absolute; right: 0; display:flex; align-items:center; gap:0.8rem; top: 0;">
+                    <button id="btnShareApp" class="floating-action-btn" style="width:40px; height:40px; background:var(--surface-color); border:1px solid var(--border-color); border-radius:50%; display:flex; justify-content:center; align-items:center; cursor:pointer; color:var(--text-main); box-shadow:var(--shadow-sm);" title="공유하기">
+                        <i data-lucide="share-2" style="width:18px;height:18px;"></i>
+                    </button>
+                    <button id="btnOpenSettings" class="floating-action-btn" style="width:40px; height:40px; background:var(--surface-color); border:1px solid var(--border-color); border-radius:50%; display:flex; justify-content:center; align-items:center; cursor:pointer; color:var(--text-main); box-shadow:var(--shadow-sm);" title="설정">
+                        <i data-lucide="settings" style="width:18px;height:18px;"></i>
+                    </button>
+                </div>
+            </div>
+            <div style="margin-top: 0.6rem; margin-bottom: 0.8rem; display: flex; justify-content: center;">
+                <p class="subtitle" style="font-size: 0.9rem; color: #888; font-weight: 500; font-family:'Pretendard', sans-serif;">집 안의 물건을 기록하세요.</p>
+            </div>
+        </header>
+
+        <!-- 이미지 영역 -->
+        <section class="hero-section">
+            <div class="image-wrapper">
+                <img src="assets/hero.png" alt="3D 펫 아이소메트릭 탐정 이미지" class="hero-image">
+            </div>
+        </section>
+
+        <!-- 찾기 & 기록 폼 -->
+        <section class="form-section">
+
+            <div class="long-search-input" style="display:flex; align-items:center; position:relative;">
+                <i data-lucide="package" class="search-icon" style="position:absolute; left:1rem;"></i>
+                <input type="text" id="itemName" placeholder="물건 추가하기" autocomplete="off" style="flex:1; padding-left:3rem; padding-right:3rem;">
+                <input type="file" id="itemPhotoInput" accept="image/*" capture="environment" style="display:none;">
+                <button type="button" id="btnCamera" style="position:absolute; right:0.5rem; background:transparent; border:none; cursor:pointer; padding:8px; display:flex; color:var(--text-muted); transition:0.2s;" title="위치 사진 찍기!" onmouseover="this.style.color='var(--primary-color)'" onmouseout="this.style.color='var(--text-muted)'">
+                    <i data-lucide="camera" style="width:24px;height:24px;"></i>
+                </button>
+            </div>
+            
+            <!-- 썸네일 미리보기 구역 -->
+            <div id="photoPreview" style="display:none; margin-top:1rem; margin-bottom:1rem; position:relative; width:fit-content; border-radius:12px; overflow:hidden; border:2px solid var(--primary-color);">
+                <img id="photoPreviewImg" style="display:block; max-width:150px; max-height:150px; object-fit:cover;">
+                <button type="button" id="btnRemovePhoto" style="position:absolute; top:5px; right:5px; background:rgba(0,0,0,0.6); color:white; border:none; border-radius:50%; width:26px; height:26px; cursor:pointer; display:flex; align-items:center; justify-content:center;">
+                    <i data-lucide="x" style="width:14px;height:14px;"></i>
+                </button>
+            </div>
+            <div class="add-details" id="addDetailsPanel">
+                <div class="form-row">
+                    <div class="dropdown-wrapper">
+                        <button type="button" id="btnSelectRoom" class="dropdown-btn">
+                            <span id="selectedRoomText">위치(방) 선택</span>
+                            <i data-lucide="chevron-down"></i>
+                        </button>
+                        <div id="roomDropdown" class="dropdown-menu hidden">
+                            <div class="room-grid" id="roomGrid"></div>
+                        </div>
+                    </div>
+                    <div class="memo-wrapper" style="position:relative; flex:2;">
+                        <i data-lucide="pencil" class="memo-icon"></i>
+                        <input type="text" id="itemMemo" placeholder="간단한 메모 (예: 두번째 서랍)" class="memo-input" style="width:100%;">
+                    </div>
+                </div>
+                <button type="button" id="btnSave" class="save-btn"><i data-lucide="save" style="margin-right:8px; vertical-align:middle; display:inline-block;"></i>물건 저장하기</button>
+            </div>
+
+            <!-- 검색 결과 표시 영역 (숨김/보임 처리 이벤트용) -->
+            <div id="searchResults" class="search-results hidden"></div>
+        </section>
+
+        <!-- 방 목록 버튼 구역 (하단 필터/네비게이션 용도) -->
+        <section class="rooms-section" style="margin-top: 2rem;">
+            <h2 class="section-title" id="myRoomsTitle" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center; transition: color 0.2s;" title="방 전체 엿보기 페이지로 이동합니다" onmouseover="this.style.color='var(--primary-color)'" onmouseout="this.style.color='var(--text-main)'">
+                <span><i data-lucide="home" style="vertical-align: middle; margin-right: 6px;"></i>방 목록</span>
+                <span style="font-size:0.85rem; font-weight:normal; color:var(--text-muted); padding:4px 10px; border-radius:12px; border:1px solid var(--border-color); background:var(--bg-color);">전체 목록보기 &rarr;</span>
+            </h2>
+            <div class="room-grid" id="bottomRoomGrid"></div>
+        </section>
+    </div>
+
+    <!-- 하단 플로팅 백업 & 기록 버튼 -->
+    <div style="position: fixed; bottom: 2rem; right: 2rem; z-index: 1000; display:flex; flex-direction:column; gap:0.8rem;">
+        <button id="btnBackup" style="background:rgba(255,255,255,0.8); border:1px solid rgba(0,0,0,0.1); border-radius:50%; width:50px; height:50px; display:flex; justify-content:center; align-items:center; box-shadow:0 2px 4px rgba(0,0,0,0.05); cursor:pointer; color:var(--text-muted); transition:transform 0.2s;" title="현재 상태 백업하기" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+            <i data-lucide="save"></i>
+        </button>
+        <button onclick="location.href='backup.html'" style="background:rgba(255,255,255,0.8); border:1px solid rgba(0,0,0,0.1); border-radius:50%; width:50px; height:50px; display:flex; justify-content:center; align-items:center; box-shadow:0 2px 4px rgba(0,0,0,0.05); cursor:pointer; color:var(--text-muted); transition:transform 0.2s;" title="백업 내역 및 기록 보기" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+            <i data-lucide="history"></i>
+        </button>
+    </div>
+
+    <!-- Toast 알림 컨테이너 -->
+    <div id="toastContainer" class="toast-container">    </div>
+
+    <!-- Settings Overlay -->
+    <div id="settingsOverlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);backdrop-filter:blur(5px);z-index:9000;display:none;align-items:center;justify-content:center;">
+        <div style="background:var(--surface-color);width:90%;max-width:400px;border-radius:20px;padding:2rem;box-shadow:var(--shadow-xl);position:relative;">
+            <button id="btnCloseSettings" style="position:absolute;top:15px;right:15px;background:transparent;border:none;cursor:pointer;color:var(--text-main);"><i data-lucide="x"></i></button>
+            <h2 style="margin-bottom:1.5rem;font-size:1.3rem;">앱 설정</h2>
+            
+            <div style="margin-bottom:1.5rem;">
+                <h3 style="font-size:0.9rem;color:var(--text-muted);margin-bottom:0.5rem;">1. 계정 관리</h3>
+                <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg-color);padding:0.8rem;border-radius:12px;margin-bottom:0.5rem;border:1px solid var(--border-color);">
+                    <span style="font-weight:600; font-size:0.9rem;"><i data-lucide="user" style="width:16px;height:16px;vertical-align:-3px;margin-right:5px;"></i><span id="settingsNicknameDisplay">회원</span></span>
+                    <button id="btnEditNickname" style="background:var(--primary-color);color:white;border:none;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:0.8rem;">수정</button>
+                </div>
+                <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
+                    <button id="btnKakaoSwitchAccount" style="flex:1;background:var(--bg-color);color:var(--text-main);border:1px solid var(--border-color);padding:0.7rem;border-radius:12px;font-weight:600;cursor:pointer;text-align:center;font-size:0.85rem;transition:opacity 0.2s;">
+                        다른 계정으로 로그인
+                    </button>
+                    <button id="btnKakaoLogout" style="flex:1;background:var(--bg-color);color:var(--text-muted);border:1px solid var(--border-color);padding:0.7rem;border-radius:12px;font-weight:600;cursor:pointer;text-align:center;font-size:0.85rem;transition:opacity 0.2s;">
+                        로그아웃
+                    </button>
+                </div>
+            </div>
+            
+            <div style="margin-bottom:1.5rem;">
+                <h3 style="font-size:0.9rem;color:var(--text-muted);margin-bottom:0.5rem;">2. 백업/복원 기록</h3>
+                <div id="settingsBackupList" style="display:flex;flex-direction:column;gap:5px;max-height:150px;overflow-y:auto;background:var(--bg-color);padding:0.5rem;border-radius:12px;border:1px solid var(--border-color);margin-bottom:0.5rem;">
+                </div>
+            </div>
+
+            <div>
+                <h3 style="font-size:0.9rem;color:var(--text-muted);margin-bottom:0.5rem;">3. 테마</h3>
+                <div style="display:flex; gap:0.8rem; flex-wrap:wrap; align-items:center;">
+                    <button type="button" class="theme-btn" data-theme="light" title="라이트(기본)" style="background:#f8fafc; border:2px solid #ccc; width:44px; height:44px; border-radius:50%; cursor:pointer; transition:transform 0.2s;"></button>
+                    <button type="button" class="theme-btn" data-theme="dark" title="다크 모드" style="background:#1e293b; border:2px solid #334155; width:44px; height:44px; border-radius:50%; cursor:pointer; transition:transform 0.2s;"></button>
+                    <button type="button" class="theme-btn" data-theme="alps" title="스위스 알프스" style="width:44px; height:44px; border-radius:50%; cursor:pointer; border:2px solid #ccc; background:url('assets/alps.jpg') center/cover no-repeat; overflow:hidden; padding:0; transition:transform 0.2s;"></button>
+                    <button type="button" class="theme-btn" data-theme="positano" title="포지타노" style="width:44px; height:44px; border-radius:50%; cursor:pointer; border:2px solid #ccc; background:url('assets/positano.jpg') center/cover no-repeat; overflow:hidden; padding:0; transition:transform 0.2s;"></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+            .then(() => console.log('PWA Service Worker 설정 완료! (이제 앱처럼 설치 가능합니다)'));
+        }
+    </script>
+    <!-- Right-center floating arrow to go to rooms page -->
+    <div style="position:fixed; top:50%; right:1rem; transform:translateY(-50%); z-index:500;">
+        <button onclick="location.href='rooms.html'" style="background:var(--surface-color); border:1px solid var(--border-color); border-radius:50%; width:50px; height:50px; display:flex; justify-content:center; align-items:center; box-shadow:var(--shadow-sm); cursor:pointer; color:var(--text-muted); transition:all 0.2s;" title="목록보기" onmouseover="this.style.transform='scale(1.1)'; this.style.color='var(--primary-color)'; this.style.borderColor='var(--primary-color)';" onmouseout="this.style.transform='scale(1)'; this.style.color='var(--text-muted)'; this.style.borderColor='var(--border-color)';">
+            <i data-lucide="chevron-right" style="width:28px; height:28px;"></i>
+        </button>
+    </div>
+    <script src="js/firebase-sync.js"></script>
+    <script src="js/script.js"></script>
+</body>
+</html>

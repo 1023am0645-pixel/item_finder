@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#ff8c42">
+    <title>물건어디 - 방별 보기</title>
+    <link rel="manifest" href="manifest.json">
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;800;900&family=Nanum+Pen+Script&family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script>
+        // Apply saved theme BEFORE page renders (prevents flash of light mode)
+        (function() {
+            var savedTheme = localStorage.getItem('itemFinder_theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+    </script>
+    <script>
+        if (sessionStorage.getItem('kc_logged_in') !== 'true') {
+            window.location.replace('index.html');
+        }
+    </script>
+</head>
+<body>
+    <div class="app-container is-rooms-page">
+        <!-- 상단 타이틀 -->
+        <header>
+            <div class="header-top" style="position: relative; width:100%; max-width:500px; margin: 0 auto 1.5rem; display: flex; flex-direction: column; align-items: center;">
+                <!-- Mascot Image -->
+                <img src="assets/hero.png" alt="mascot" style="width: 280px; height: 280px; object-fit: contain; border-radius: 24px; margin-bottom: 1rem; box-shadow: var(--shadow-md);">
+                
+                <h1 class="logo app-main-title" style="font-family:'Nanum Pen Script', cursive; font-size:3.5rem; margin:0; color:var(--text-main); opacity: 0.7;">
+                    Home item list
+                </h1>
+            </div>
+        </header>
+
+        <!-- 방 전체 검색 기능 -->
+        <div style="display:flex; justify-content:center; margin: 0 0 2rem 0;">
+            <div class="long-search-input" id="globalSearchWrapper" style="width: 90%; max-width: 500px; display:flex; align-items:center; border:1px solid var(--border-color); border-radius:12px; padding:0; background:var(--bg-color); height: 50px; position:relative; overflow:hidden; transition: background 0.3s;">
+                <i data-lucide="search" class="search-icon" style="color:var(--text-muted); width:20px; height:20px; position:absolute; left:15px; top:50%; transform:translateY(-50%); z-index:2;"></i>
+                <input type="text" id="globalSearchInput" placeholder="물건검색" autocomplete="off" style="flex:1; border:none; background:transparent; outline:none; font-size:1.05rem; color:var(--text-main); padding-left:50px; width:100%; height:100%; position:relative; z-index:1;">
+            </div>
+        </div>
+
+        <div class="global-actions" style="display: flex; justify-content: space-between; align-items: center; background: var(--surface-color); padding: 1rem; border-radius: 16px; margin-bottom: 2rem; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); flex-wrap:wrap; gap:10px;">
+            <button id="globalSelectAllBtn" class="global-select-btn" style="display: flex; align-items: center; gap: 8px; background: transparent; border: 1px solid var(--border-color); color: var(--text-main); font-weight: 600; padding: 0.5rem 1rem; border-radius: 12px; cursor: pointer; transition: 0.2s;">
+                <i data-lucide="check-square" style="width: 18px; height: 18px;"></i>
+                <span>모든 방 전체선택</span>
+            </button>
+            <div style="display: flex; gap: 0.5rem; background: var(--bg-color); padding: 4px; border-radius: 20px; border: 1px solid var(--border-color);">
+                <button id="viewCompactBtn" class="view-toggle-btn active" style="padding: 0.5rem 1rem; border-radius: 16px; border: none; background: var(--primary-color); color: white; font-weight: 600; cursor: pointer; transition: 0.2s; box-shadow: var(--shadow-sm);">모아보기</button>
+                <button id="viewDetailBtn" class="view-toggle-btn" style="padding: 0.5rem 1rem; border-radius: 16px; border: none; background: transparent; color: var(--text-muted); font-weight: 600; cursor: pointer; transition: 0.2s;">펼쳐보기</button>
+                <button id="viewFlatBtn" class="view-toggle-btn" style="padding: 0.5rem 1rem; border-radius: 16px; border: none; background: transparent; color: var(--text-muted); font-weight: 600; cursor: pointer; transition: 0.2s;">전체보기</button>
+            </div>
+        </div>
+
+        <!-- Global delete action -->
+        <div id="globalActionContainer" style="display:none; margin-bottom:1rem;">
+            <button id="globalDeleteBtn" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3);padding:0.6rem 1.2rem;border-radius:12px;font-weight:600;cursor:pointer;font-size:0.9rem;">
+                <i data-lucide="trash-2" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;"></i>선택 항목 일괄 삭제
+            </button>
+        </div>
+
+        <!-- 방 목록 별 내용 표시 -->
+        <section class="form-section" style="margin-top: 0; flex: 1;">
+            <h2 style="font-size:1.1rem;margin-bottom:1.2rem;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                <span style="display:flex; align-items:center; gap:8px;">
+                    <i data-lucide="list" style="width:20px;height:20px;color:var(--primary-color);"></i>
+                    물건목록
+                </span>
+                <button id="btnManageRoomsInRooms" style="background:var(--bg-color);border:1px solid var(--border-color);border-radius:12px;color:var(--text-main);cursor:pointer;display:flex;align-items:center;font-size:0.85rem;font-weight:600;padding:6px 12px;box-shadow:var(--shadow-sm);transition:all 0.2s;"><i data-lucide="folder-plus" style="width:16px;height:16px;margin-right:4px;"></i>방 관리</button>
+            </h2>
+            <div id="allRoomsContainer" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; margin-top: 1rem; align-items: start;">
+                <!-- JavaScript will generate room blocks here -->
+            </div>
+        </section>
+    </div>
+
+    <!-- 하단 플로팅 백업 & 기록 버튼 -->
+    <div style="position: fixed; bottom: 2rem; right: 2rem; z-index: 1000; display:flex; flex-direction:column; gap:0.8rem;">
+        <button id="btnBackup" class="floating-action-btn" style="background:var(--surface-color); border:1px solid var(--border-color); border-radius:50%; width:50px; height:50px; display:flex; justify-content:center; align-items:center; box-shadow:var(--shadow-sm); cursor:pointer; color:var(--text-muted); transition:transform 0.2s;" title="현재 상태 백업하기" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+            <i data-lucide="save"></i>
+        </button>
+        <button onclick="location.href='backup.html'" class="floating-action-btn" style="background:var(--surface-color); border:1px solid var(--border-color); border-radius:50%; width:50px; height:50px; display:flex; justify-content:center; align-items:center; box-shadow:var(--shadow-sm); cursor:pointer; color:var(--text-muted); transition:transform 0.2s;" title="백업 내역 및 기록 보기" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+            <i data-lucide="history"></i>
+        </button>
+    </div>
+
+    <!-- Right-center floating arrow to go back to page 1 -->
+    <div style="position:fixed; top:50%; right:1rem; transform:translateY(-50%); z-index:500;">
+        <button onclick="location.href='index.html'" style="background:var(--surface-color); border:1px solid var(--border-color); border-radius:50%; width:50px; height:50px; display:flex; justify-content:center; align-items:center; box-shadow:var(--shadow-sm); cursor:pointer; color:var(--text-muted); transition:all 0.2s;" title="홈으로" onmouseover="this.style.transform='scale(1.1)'; this.style.color='var(--primary-color)'; this.style.borderColor='var(--primary-color)';" onmouseout="this.style.transform='scale(1)'; this.style.color='var(--text-muted)'; this.style.borderColor='var(--border-color)';">
+            <i data-lucide="chevron-left" style="width:28px; height:28px;"></i>
+        </button>
+    </div>
+
+    <!-- Toast 알림 컨테이너 -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Room Manager Overlay -->
+    <div id="roomManagerOverlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);backdrop-filter:blur(5px);z-index:9000;display:none;align-items:center;justify-content:center;">
+        <div style="background:var(--surface-color);width:90%;max-width:400px;border-radius:20px;padding:2rem;box-shadow:var(--shadow-xl);position:relative;">
+            <button id="btnCloseRoomManager" style="position:absolute;top:15px;right:15px;background:transparent;border:none;cursor:pointer;color:var(--text-main);"><i data-lucide="x"></i></button>
+            <h2 style="margin-bottom:1.5rem;font-size:1.3rem;">방 목록 관리</h2>
+            
+            <div id="roomManagerList" style="display:flex;flex-direction:column;gap:5px;max-height:300px;overflow-y:auto;background:var(--bg-color);padding:0.5rem;border-radius:12px;border:1px solid var(--border-color);margin-bottom:1rem;">
+            </div>
+            <button id="btnAddNewRoom" style="width:100%;background:none;border:1px dashed var(--text-muted);color:var(--text-main);padding:0.8rem;border-radius:12px;cursor:pointer;font-weight:600;font-size:0.95rem;">+ 새 방 추가</button>
+        </div>
+    </div>
+
+    <!-- Photo Full View Overlay -->
+    <div id="photoOverlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:10000;display:none;align-items:center;justify-content:center;padding:2rem;" onclick="this.style.display='none'">
+        <img id="photoFullView" style="max-width:100%; max-height:100%; object-fit:contain; border-radius:12px;">
+        <span style="position:absolute; top:20px; right:20px; color:white; font-size:1.2rem; cursor:pointer;"><i data-lucide="x"></i></span>
+    </div>
+
+    <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');</script>
+    <script src="js/firebase-sync.js"></script>
+    <script src="js/rooms.js"></script>
+</body>
+</html>

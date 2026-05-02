@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#ff8c42">
+    <title>물건어디 - 백업 센터</title>
+    <link rel="manifest" href="manifest.json">
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        if (sessionStorage.getItem('kc_logged_in') !== 'true') {
+            window.location.replace('index.html');
+        }
+    </script>
+</head>
+<body>
+    <div class="app-container is-rooms-page">
+        <!-- 상단 타이틀 -->
+        <header>
+            <div class="header-top" style="position: relative; justify-content: center;">
+                <h1 class="logo">물건어디<span class="q-mark" style="color: #ff8c42; font-family: 'Jua', 'Comic Sans MS', cursive;">?</span></h1>
+                <div class="theme-switcher" style="position: absolute; right: 0;">
+                    <button type="button" class="theme-btn" data-theme="light" title="라이트(기본)" style="background:#f8fafc; border:1px solid #ccc;"></button>
+                    <button type="button" class="theme-btn" data-theme="dark" title="다크 모드" style="background:#1e293b; border:1px solid #334155;"></button>
+                    <button type="button" class="theme-btn" data-theme="alps" title="스위스 알프스" style="background:#e0f2fe; border:1px solid #bae6fd;"></button>
+                    <button type="button" class="theme-btn" data-theme="positano" title="포지타노" style="background:#fffbeb; border:1px solid #fde68a;"></button>
+                </div>
+            </div>
+            <div class="subtitle" style="display: flex; align-items: center; justify-content: space-between; margin-top: 1.5rem;">
+                <button onclick="location.href='index.html'" style="background:var(--bg-color); border:1px solid var(--border-color); color:var(--text-main); cursor:pointer; display:flex; align-items:center; padding: 0.6rem 1.2rem; border-radius: 20px; font-size:1rem; font-weight:600; transition: all 0.2s;"><i data-lucide="arrow-left" style="margin-right:6px;width:18px;height:18px;"></i>돌아가기</button>
+                <div style="color:var(--text-muted); font-size: 0.95rem; font-weight: 600;"><i data-lucide="database" style="vertical-align:middle;margin-right:4px;"></i>백업 관리 센터</div>
+            </div>
+        </header>
+
+        <!-- 방 목록 별 내용 표시 -->
+        <section class="form-section" style="margin-top: 0; flex: 1;">
+            <h2 class="section-title"><i data-lucide="history" style="vertical-align: middle; margin-right: 6px;"></i>날짜별 백업 기록</h2>
+            
+            <div id="backupContainer" style="display:flex; flex-direction:column; gap: 1rem; margin-top: 1rem;">
+                <!-- JavaScript will generate backups here -->
+            </div>
+        </section>
+    </div>
+
+    <!-- Toast 알림 컨테이너 -->
+    <div id="toastContainer" class="toast-container"></div>
+    <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');</script>
+    <script src="js/backup.js"></script>
+</body>
+</html>

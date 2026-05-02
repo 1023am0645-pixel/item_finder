@@ -1,0 +1,26 @@
+{
+  "name": "물건어디?",
+  "short_name": "물건어디",
+  "description": "우리집 물건 위치를 저장하고 찾아주는 홈 인벤토리 앱",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f8fafc",
+  "theme_color": "#ff8c42",
+  "lang": "ko",
+  "icons": [
+    {
+      "src": "assets/hero.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/hero.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
