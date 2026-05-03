@@ -162,6 +162,37 @@ document.addEventListener('DOMContentLoaded', () => {
     const settingsOverlay = document.getElementById('settingsOverlay');
     const btnEditNickname = document.getElementById('btnEditNickname');
     const btnKakaoLogout = document.getElementById('btnKakaoLogout');
+    const btnInviteFamily = document.getElementById('btnInviteFamily');
+
+    if (btnInviteFamily) {
+        btnInviteFamily.addEventListener('click', () => {
+            const myNick = localStorage.getItem('kc_nickname') || '가족';
+            const appUrl = 'https://1023am0645-pixel.github.io/item_finder/';
+            const message = `${myNick}님이 '물건어디' 앱에 초대했어요!\n\n우리 가족 물건 위치를 함께 관리해요 📦\n\n아래 링크에서 카카오 로그인 후 사용하시면 돼요 😊\n${appUrl}`;
+
+            if (window.Kakao && window.Kakao.isInitialized()) {
+                window.Kakao.Share.sendDefault({
+                    objectType: 'text',
+                    text: message,
+                    link: {
+                        mobileWebUrl: appUrl,
+                        webUrl: appUrl
+                    },
+                    buttons: [{
+                        title: '앱 열기',
+                        link: { mobileWebUrl: appUrl, webUrl: appUrl }
+                    }]
+                });
+            } else {
+                // 카카오 SDK 미작동 시 클립보드 복사로 대체
+                navigator.clipboard.writeText(message).then(() => {
+                    showToast('초대 메시지가 복사됐어요! 카카오톡에 붙여넣기 해주세요.');
+                }).catch(() => {
+                    alert(message);
+                });
+            }
+        });
+    }
 
     if (btnOpenSettings) {
         btnOpenSettings.addEventListener('click', () => {
@@ -334,18 +365,35 @@ document.addEventListener('DOMContentLoaded', () => {
             row.style.alignItems = 'center';
             const dateStr = new Date(b.date).toLocaleString('ko-KR', { month:'short', day:'numeric', hour:'numeric', minute:'numeric' });
             row.innerHTML = `<span style="font-size:0.85rem;">${dateStr} (${b.count}개)</span>
-                <button class="restore-backup-btn" data-index="${idx}" style="background:var(--primary-color);color:white;border:none;border-radius:6px;padding:4px 8px;font-size:0.8rem;cursor:pointer;">복원</button>`;
+                <div style="display:flex;gap:4px;align-items:center;">
+                    <button class="restore-backup-btn" data-index="${idx}" style="background:var(--primary-color);color:white;border:none;border-radius:6px;padding:4px 8px;font-size:0.8rem;cursor:pointer;">복원</button>
+                    <button class="delete-backup-btn" data-index="${idx}" style="background:transparent;color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:6px;padding:4px 6px;font-size:0.8rem;cursor:pointer;line-height:1;"><i data-lucide="x" style="width:14px;height:14px;"></i></button>
+                </div>`;
             listContainer.appendChild(row);
         });
-        
+        if(window.lucide) lucide.createIcons();
+
         listContainer.querySelectorAll('.restore-backup-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+            btn.addEventListener('click', () => {
                 const idx = parseInt(btn.getAttribute('data-index'));
                 if(confirm('이 시점으로 기기 데이터를 복원하시겠습니까? (현재 기록은 삭제됩니다)')) {
                     localStorage.setItem('itemFinder_data', JSON.stringify(backups[idx].data));
                     if(window.syncToCloud) syncToCloud();
                     showToast('데이터가 성공적으로 복원되었습니다.');
                     setTimeout(() => window.location.reload(), 1000);
+                }
+            });
+        });
+
+        listContainer.querySelectorAll('.delete-backup-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const idx = parseInt(btn.getAttribute('data-index'));
+                if(confirm('백업 기록을 삭제하시겠습니까?')) {
+                    backups.splice(idx, 1);
+                    localStorage.setItem('itemFinder_backups', JSON.stringify(backups));
+                    if(window.syncBackupsToCloud) window.syncBackupsToCloud().catch(() => {});
+                    showToast('백업 기록이 삭제되었습니다.');
+                    renderBackupList();
                 }
             });
         });
