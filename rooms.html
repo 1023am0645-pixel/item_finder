@@ -80,6 +80,9 @@
 
     <!-- 하단 플로팅 백업 & 기록 버튼 -->
     <div style="position: fixed; bottom: 2rem; right: 2rem; z-index: 1000; display:flex; flex-direction:column; gap:0.8rem;">
+        <button id="btnSyncRefresh" class="floating-action-btn" style="background:var(--surface-color); border:1px solid var(--border-color); border-radius:50%; width:50px; height:50px; display:flex; justify-content:center; align-items:center; box-shadow:var(--shadow-sm); cursor:pointer; color:var(--text-muted); transition:transform 0.2s;" title="데이터 새로고침">
+            <i data-lucide="refresh-cw"></i>
+        </button>
         <button id="btnBackup" class="floating-action-btn" style="background:var(--surface-color); border:1px solid var(--border-color); border-radius:50%; width:50px; height:50px; display:flex; justify-content:center; align-items:center; box-shadow:var(--shadow-sm); cursor:pointer; color:var(--text-muted); transition:transform 0.2s;" title="현재 상태 백업하기" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
             <i data-lucide="save"></i>
         </button>

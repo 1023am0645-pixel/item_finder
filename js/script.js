@@ -156,6 +156,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     updateAppTitle(); // Call on load too
     
+    // 새로고침 버튼
+    const btnSyncRefresh = document.getElementById('btnSyncRefresh');
+    if (btnSyncRefresh) {
+        btnSyncRefresh.addEventListener('click', async () => {
+            const icon = btnSyncRefresh.querySelector('i');
+            icon.style.transition = 'transform 0.6s';
+            icon.style.transform = 'rotate(360deg)';
+            setTimeout(() => { icon.style.transition = ''; icon.style.transform = ''; }, 600);
+
+            if (window.loadFromCloud) {
+                const loaded = await window.loadFromCloud().catch(() => false);
+                if (loaded) {
+                    showToast('최신 데이터로 업데이트됐어요!');
+                    setTimeout(() => window.location.reload(), 800);
+                } else {
+                    showToast('이미 최신 상태예요!');
+                }
+            }
+        });
+    }
+
     // Settings Overlay Logic
     const btnOpenSettings = document.getElementById('btnOpenSettings');
     const btnCloseSettings = document.getElementById('btnCloseSettings');

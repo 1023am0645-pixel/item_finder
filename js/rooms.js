@@ -1,4 +1,21 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // 새로고침 버튼
+    const btnSyncRefresh = document.getElementById('btnSyncRefresh');
+    if (btnSyncRefresh) {
+        btnSyncRefresh.addEventListener('click', async () => {
+            const icon = btnSyncRefresh.querySelector('i');
+            icon.style.transition = 'transform 0.6s';
+            icon.style.transform = 'rotate(360deg)';
+            setTimeout(() => { icon.style.transition = ''; icon.style.transform = ''; }, 600);
+            if (window.loadFromCloud) {
+                const loaded = await window.loadFromCloud().catch(() => false);
+                if (loaded) {
+                    setTimeout(() => window.location.reload(), 800);
+                }
+            }
+        });
+    }
+
     // Theme logic reuse
     const themeBtns = document.querySelectorAll('.theme-btn');
     const savedTheme = localStorage.getItem('itemFinder_theme') || 'light';
