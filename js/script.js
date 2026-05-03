@@ -143,19 +143,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     updateAppTitle(); // Call on load too
     
-    // 새로고침 버튼
+    // 새로고침 버튼 (설정 안에 있음)
     const btnSyncRefresh = document.getElementById('btnSyncRefresh');
     if (btnSyncRefresh) {
         btnSyncRefresh.addEventListener('click', async () => {
             const icon = btnSyncRefresh.querySelector('i');
-            icon.style.transition = 'transform 0.6s';
+            btnSyncRefresh.disabled = true;
+            btnSyncRefresh.style.opacity = '0.6';
+            icon.style.transition = 'transform 0.8s linear';
             icon.style.transform = 'rotate(360deg)';
-            showToast('데이터 불러오는 중...');
+            showToast('☁️ 클라우드에서 데이터 불러오는 중...');
 
             if (window.loadFromCloud) {
                 await window.loadFromCloud().catch(() => {});
             }
-            setTimeout(() => window.location.reload(), 800);
+            showToast('✅ 완료! 화면을 새로고침합니다.');
+            setTimeout(() => window.location.reload(), 1000);
         });
     }
 

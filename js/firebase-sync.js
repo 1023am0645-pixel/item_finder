@@ -263,9 +263,6 @@ async function loadFromCloud() {
             localStorage.setItem('itemFinder_backups', JSON.stringify(cloudBackups));
         }
 
-        // 병합 결과 클라우드에 반영
-        setTimeout(() => syncToCloud(), 1500);
-
         return true;
 
     } catch (e) {

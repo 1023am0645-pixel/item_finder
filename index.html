@@ -45,12 +45,9 @@
     <div class="app-container">
         <!-- 상단 타이틀 -->
         <header>
-            <div class="header-top" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-                <h1 class="logo app-main-title" style="font-family:'Nanum Pen Script', cursive; font-size:2.5rem; flex:1; text-align:center; margin:0;">물건어디<span class="q-mark" style="color: #ff8c42;">?</span></h1>
-                <div style="display:flex; align-items:center; gap:0.5rem; flex-shrink:0;">
-                    <button id="btnSyncRefresh" class="floating-action-btn" style="width:40px; height:40px; background:var(--surface-color); border:1px solid var(--border-color); border-radius:50%; display:flex; justify-content:center; align-items:center; cursor:pointer; color:var(--text-main); box-shadow:var(--shadow-sm);" title="데이터 새로고침">
-                        <i data-lucide="refresh-cw" style="width:18px;height:18px;"></i>
-                    </button>
+            <div class="header-top" style="position: relative; justify-content: center; height: 40px; display: flex; align-items: center;">
+                <h1 class="logo app-main-title" style="font-family:'Nanum Pen Script', cursive; font-size:2.5rem;">물건어디<span class="q-mark" style="color: #ff8c42;">?</span></h1>
+                <div style="position: absolute; right: 0; display:flex; align-items:center; gap:0.8rem; top: 0;">
                     <button id="btnShareApp" class="floating-action-btn" style="width:40px; height:40px; background:var(--surface-color); border:1px solid var(--border-color); border-radius:50%; display:flex; justify-content:center; align-items:center; cursor:pointer; color:var(--text-main); box-shadow:var(--shadow-sm);" title="공유하기">
                         <i data-lucide="share-2" style="width:18px;height:18px;"></i>
                     </button>
@@ -171,8 +168,16 @@
                 </div>
             </div>
 
+            <div style="margin-bottom:1.5rem;">
+                <h3 style="font-size:0.9rem;color:var(--text-muted);margin-bottom:0.5rem;">3. 데이터 새로고침</h3>
+                <button id="btnSyncRefresh" style="width:100%;background:var(--bg-color);color:var(--text-main);border:1px solid var(--border-color);padding:0.7rem;border-radius:12px;font-weight:600;cursor:pointer;font-size:0.85rem;display:flex;align-items:center;justify-content:center;gap:8px;">
+                    <i data-lucide="refresh-cw" style="width:16px;height:16px;"></i>
+                    최신 데이터 불러오기
+                </button>
+            </div>
+
             <div>
-                <h3 style="font-size:0.9rem;color:var(--text-muted);margin-bottom:0.5rem;">3. 테마</h3>
+                <h3 style="font-size:0.9rem;color:var(--text-muted);margin-bottom:0.5rem;">4. 테마</h3>
                 <div style="display:flex; gap:0.8rem; flex-wrap:wrap; align-items:center;">
                     <button type="button" class="theme-btn" data-theme="light" title="라이트(기본)" style="background:#f8fafc; border:2px solid #ccc; width:44px; height:44px; border-radius:50%; cursor:pointer; transition:transform 0.2s;"></button>
                     <button type="button" class="theme-btn" data-theme="dark" title="다크 모드" style="background:#1e293b; border:2px solid #334155; width:44px; height:44px; border-radius:50%; cursor:pointer; transition:transform 0.2s;"></button>
