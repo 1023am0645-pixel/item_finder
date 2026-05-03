@@ -1,16 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Theme logic reuse
-    const themeBtns = document.querySelectorAll('.theme-btn');
+    // Apply saved theme
     const savedTheme = localStorage.getItem('itemFinder_theme') || 'light';
     document.documentElement.setAttribute('data-theme', savedTheme);
-    
-    themeBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const theme = btn.getAttribute('data-theme');
-            document.documentElement.setAttribute('data-theme', theme);
-            localStorage.setItem('itemFinder_theme', theme);
-        });
-    });
 
     // Toast UI
     function showToast(msg) {
@@ -48,23 +39,20 @@ document.addEventListener('DOMContentLoaded', () => {
             card.style.borderRadius = 'var(--radius-md)';
             card.style.padding = '1.2rem';
             card.style.display = 'flex';
-            card.style.justifyContent = 'space-between';
-            card.style.alignItems = 'center';
-            card.style.gap = '1rem';
-            
+            card.style.flexDirection = 'column';
+            card.style.gap = '0.8rem';
+
             const localDateStr = new Date(b.date).toLocaleString([], { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute:'2-digit' });
-            
+
             card.innerHTML = `
-                <div style="flex:1;">
-                    <div style="font-weight:700; color:var(--text-main); font-size:1.15rem; margin-bottom:6px;">
-                        ${index === 0 ? '<span style="background:var(--primary-color);color:white;font-size:0.75rem;padding:2px 8px;border-radius:12px;margin-right:8px;vertical-align:middle;">최근 복사본</span>' : ''}
-                        ${localDateStr}
-                    </div>
-                    <div style="color:var(--text-muted); font-size:0.95rem; font-weight:500;"><i data-lucide="box" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;"></i>보관된 총 물건: <span style="color:var(--text-main);">${b.count}개</span></div>
+                <div>
+                    ${index === 0 ? '<span style="display:inline-block;background:var(--primary-color);color:white;font-size:0.75rem;padding:2px 8px;border-radius:12px;margin-bottom:6px;">최근 복사본</span>' : ''}
+                    <div style="font-weight:700; color:var(--text-main); font-size:1.1rem; margin-bottom:4px;">${localDateStr}</div>
+                    <div style="color:var(--text-muted); font-size:0.9rem; font-weight:500;"><i data-lucide="box" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;"></i>보관된 총 물건: <span style="color:var(--text-main);">${b.count}개</span></div>
                 </div>
-                <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-                    <button class="btn-restore" style="background:var(--primary-color); color:white; border:none; padding:0.6rem 1.2rem; border-radius:12px; font-weight:600; cursor:pointer; transition:0.2s;"><i data-lucide="download" style="width:18px;height:18px;vertical-align:middle;margin-right:6px;"></i>이 상태로 복구</button>
-                    <button class="btn-delete" style="background:rgba(239, 68, 68, 0.1); color:#ef4444; border:none; padding:0.6rem 1.2rem; border-radius:12px; font-weight:600; cursor:pointer; transition:0.2s;"><i data-lucide="trash-2" style="width:18px;height:18px;vertical-align:middle;margin-right:4px;"></i>기록 삭제</button>
+                <div style="display:flex; gap:0.5rem;">
+                    <button class="btn-restore" style="flex:1; background:var(--primary-color); color:white; border:none; padding:0.6rem 0; border-radius:12px; font-weight:600; cursor:pointer; transition:0.2s; text-align:center;"><i data-lucide="download" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;"></i>이 상태로 복구</button>
+                    <button class="btn-delete" style="background:rgba(239, 68, 68, 0.1); color:#ef4444; border:none; padding:0.6rem 1rem; border-radius:12px; font-weight:600; cursor:pointer; transition:0.2s;"><i data-lucide="trash-2" style="width:16px;height:16px;vertical-align:middle;"></i></button>
                 </div>
             `;
             
