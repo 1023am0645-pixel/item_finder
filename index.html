@@ -170,8 +170,7 @@
 
             <div style="margin-bottom:1.5rem;">
                 <h3 style="font-size:0.9rem;color:var(--text-muted);margin-bottom:0.5rem;">3. 데이터 새로고침</h3>
-                <button id="btnSyncRefresh" style="width:100%;background:var(--bg-color);color:var(--text-main);border:1px solid var(--border-color);padding:0.7rem;border-radius:12px;font-weight:600;cursor:pointer;font-size:0.85rem;display:flex;align-items:center;justify-content:center;gap:8px;">
-                    <i data-lucide="refresh-cw" style="width:16px;height:16px;"></i>
+                <button id="btnSyncRefresh" onclick="(async function(btn){btn.disabled=true;btn.textContent='불러오는 중...';try{if(window.loadFromCloud)await window.loadFromCloud();}catch(e){}window.location.reload();})(this)" style="width:100%;background:var(--bg-color);color:var(--text-main);border:1px solid var(--border-color);padding:0.7rem;border-radius:12px;font-weight:600;cursor:pointer;font-size:0.85rem;display:flex;align-items:center;justify-content:center;gap:8px;">
                     최신 데이터 불러오기
                 </button>
             </div>
