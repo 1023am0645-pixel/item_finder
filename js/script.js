@@ -165,31 +165,41 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnInviteFamily = document.getElementById('btnInviteFamily');
 
     if (btnInviteFamily) {
-        btnInviteFamily.addEventListener('click', () => {
+        btnInviteFamily.addEventListener('click', async () => {
+            btnInviteFamily.disabled = true;
+            btnInviteFamily.textContent = '초대 링크 생성 중...';
+
             const myNick = localStorage.getItem('kc_nickname') || '가족';
-            const appUrl = 'https://1023am0645-pixel.github.io/item_finder/';
-            const message = `${myNick}님이 '물건어디' 앱에 초대했어요!\n\n우리 가족 물건 위치를 함께 관리해요 📦\n\n아래 링크에서 카카오 로그인 후 사용하시면 돼요 😊\n${appUrl}`;
+            const baseUrl = 'https://1023am0645-pixel.github.io/item_finder/';
+
+            let inviteUrl = baseUrl;
+            if (window.createInviteCode) {
+                const code = await window.createInviteCode();
+                if (code) inviteUrl = `${baseUrl}?invite=${code}`;
+            }
+
+            const message = `${myNick}님이 '물건어디' 앱에 초대했어요! 📦\n\n우리 가족 물건 위치를 함께 관리해요.\n카카오 로그인 후 바로 데이터가 공유돼요 😊\n\n👉 ${inviteUrl}`;
+
+            btnInviteFamily.disabled = false;
+            btnInviteFamily.innerHTML = `<svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:#000;"><path d="M12 3c-5.52 0-10 3.58-10 8 0 2.86 1.83 5.37 4.6 6.78-.3.97-1.12 3.65-1.14 3.75-.03.14.05.21.16.2.14-.02 3.86-2.58 5.34-3.6.35.04.7.07 1.04.07 5.52 0 10-3.58 10-8s-4.48-8-10-8z"/></svg> 카카오톡으로 가족 초대하기`;
 
             if (window.Kakao && window.Kakao.isInitialized()) {
-                window.Kakao.Share.sendDefault({
-                    objectType: 'text',
-                    text: message,
-                    link: {
-                        mobileWebUrl: appUrl,
-                        webUrl: appUrl
-                    },
-                    buttons: [{
-                        title: '앱 열기',
-                        link: { mobileWebUrl: appUrl, webUrl: appUrl }
-                    }]
-                });
+                try {
+                    window.Kakao.Share.sendDefault({
+                        objectType: 'text',
+                        text: message,
+                        link: { mobileWebUrl: inviteUrl, webUrl: inviteUrl },
+                        buttons: [{ title: '앱 열기', link: { mobileWebUrl: inviteUrl, webUrl: inviteUrl } }]
+                    });
+                } catch(e) {
+                    navigator.clipboard.writeText(message).then(() => {
+                        showToast('초대 링크가 복사됐어요! 카카오톡에 붙여넣기 해주세요.');
+                    });
+                }
             } else {
-                // 카카오 SDK 미작동 시 클립보드 복사로 대체
                 navigator.clipboard.writeText(message).then(() => {
-                    showToast('초대 메시지가 복사됐어요! 카카오톡에 붙여넣기 해주세요.');
-                }).catch(() => {
-                    alert(message);
-                });
+                    showToast('초대 링크가 복사됐어요! 카카오톡에 붙여넣기 해주세요.');
+                }).catch(() => alert(message));
             }
         });
     }
