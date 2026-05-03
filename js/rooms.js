@@ -3,9 +3,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnSyncRefresh = document.getElementById('btnSyncRefresh');
     if (btnSyncRefresh) {
         btnSyncRefresh.addEventListener('click', async () => {
-            const icon = btnSyncRefresh.querySelector('i');
-            icon.style.transition = 'transform 0.6s';
-            icon.style.transform = 'rotate(360deg)';
+            const icon = btnSyncRefresh.querySelector('svg') || btnSyncRefresh.querySelector('i');
+            if (icon) {
+                icon.style.transition = 'transform 0.6s';
+                icon.style.transform = 'rotate(360deg)';
+            }
             if (window.loadFromCloud) {
                 await window.loadFromCloud().catch(() => {});
             }

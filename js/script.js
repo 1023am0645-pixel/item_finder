@@ -147,11 +147,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnSyncRefresh = document.getElementById('btnSyncRefresh');
     if (btnSyncRefresh) {
         btnSyncRefresh.addEventListener('click', async () => {
-            const icon = btnSyncRefresh.querySelector('i');
+            const icon = btnSyncRefresh.querySelector('svg') || btnSyncRefresh.querySelector('i');
             btnSyncRefresh.disabled = true;
             btnSyncRefresh.style.opacity = '0.6';
-            icon.style.transition = 'transform 0.8s linear';
-            icon.style.transform = 'rotate(360deg)';
+            if (icon) {
+                icon.style.transition = 'transform 0.8s linear';
+                icon.style.transform = 'rotate(360deg)';
+            }
             showToast('☁️ 클라우드에서 데이터 불러오는 중...');
 
             if (window.loadFromCloud) {
