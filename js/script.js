@@ -566,6 +566,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             backups.unshift(newBackup);
             localStorage.setItem('itemFinder_backups', JSON.stringify(backups));
+            if (window.syncBackupsToCloud) window.syncBackupsToCloud().catch(() => {});
             showToast('현재 물건 상태가 성공적으로 백업되었습니다!');
             
             if(window.lucide) {

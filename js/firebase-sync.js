@@ -20,6 +20,46 @@ function setCloudUserId(kakaoUserId) {
     localStorage.setItem('kc_user_id', currentUserId);
 }
 
+async function syncBackupsToCloud() {
+    if (!currentUserId) return;
+    try {
+        const backups = JSON.parse(localStorage.getItem('itemFinder_backups') || '[]');
+        const payload = {
+            user_id: currentUserId,
+            backups: backups,
+            updated_at: new Date().toISOString()
+        };
+        await fetch(`${SUPABASE_URL}/rest/v1/user_data`, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(payload)
+        });
+    } catch (e) {
+        console.warn('[Supabase] 백업 저장 실패:', e.message);
+    }
+}
+
+async function loadBackupsFromCloud() {
+    if (!currentUserId) return false;
+    try {
+        const res = await fetch(
+            `${SUPABASE_URL}/rest/v1/user_data?user_id=eq.${currentUserId}&select=backups`,
+            { headers: headers }
+        );
+        const data = await res.json();
+        if (!data || data.length === 0) return false;
+        const cloudBackups = data[0].backups || [];
+        if (cloudBackups.length > 0) {
+            localStorage.setItem('itemFinder_backups', JSON.stringify(cloudBackups));
+            return true;
+        }
+        return false;
+    } catch (e) {
+        console.warn('[Supabase] 백업 불러오기 실패:', e.message);
+        return false;
+    }
+}
+
 async function syncToCloud() {
     if (!currentUserId) return;
 
@@ -30,6 +70,7 @@ async function syncToCloud() {
             rooms: JSON.parse(localStorage.getItem('itemFinder_rooms') || '[]'),
             nickname: localStorage.getItem('kc_nickname') || '',
             theme: localStorage.getItem('itemFinder_theme') || 'light',
+            backups: JSON.parse(localStorage.getItem('itemFinder_backups') || '[]'),
             updated_at: new Date().toISOString()
         };
 
@@ -75,6 +116,13 @@ async function loadFromCloud() {
             setTimeout(() => syncToCloud(), 1000);
         }
 
+        // 백업 기록도 클라우드에서 불러오기
+        const cloudBackups = cloud.backups || [];
+        const localBackups = JSON.parse(localStorage.getItem('itemFinder_backups') || '[]');
+        if (cloudBackups.length > localBackups.length) {
+            localStorage.setItem('itemFinder_backups', JSON.stringify(cloudBackups));
+        }
+
         return true;
     } catch (e) {
         console.warn('[Supabase] 불러오기 실패:', e.message);
@@ -85,6 +133,8 @@ async function loadFromCloud() {
 window.syncToCloud = syncToCloud;
 window.loadFromCloud = loadFromCloud;
 window.setCloudUserId = setCloudUserId;
+window.syncBackupsToCloud = syncBackupsToCloud;
+window.loadBackupsFromCloud = loadBackupsFromCloud;
 
 // 저장된 사용자 ID 복원
 const storedUserId = localStorage.getItem('kc_user_id');
