@@ -1,8 +1,5 @@
-const CACHE_NAME = 'item-finder-v5';
-const urlsToCache = [
-  './index.html',
-  './rooms.html',
-  './backup.html',
+const CACHE_NAME = 'item-finder-v6';
+const STATIC_ASSETS = [
   './css/style.css',
   './js/script.js',
   './js/rooms.js',
@@ -14,16 +11,16 @@ const urlsToCache = [
   './assets/positano.jpg'
 ];
 
-// 설치: 모든 파일을 캐시에 저장
+// 설치: CSS/JS/이미지만 캐시 (HTML은 제외)
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(urlsToCache))
+      .then(cache => cache.addAll(STATIC_ASSETS))
       .then(() => self.skipWaiting())
   );
 });
 
-// 활성화: 이전 버전 캐시 삭제
+// 활성화: 이전 버전 캐시 전부 삭제
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(cacheNames => {
@@ -36,36 +33,22 @@ self.addEventListener('activate', event => {
   );
 });
 
-// 요청 처리
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
-  // 외부 CDN 요청은 네트워크 우선
+  // 외부 요청은 네트워크만 사용
   if (url.origin !== self.location.origin) {
-    event.respondWith(
-      fetch(event.request).catch(() => caches.match(event.request))
-    );
+    event.respondWith(fetch(event.request).catch(() => new Response('', {status: 408})));
     return;
   }
 
-  // HTML 페이지 요청은 항상 정확한 URL로 캐시 조회 (rooms.html → rooms.html)
-  if (event.request.mode === 'navigate') {
-    event.respondWith(
-      caches.match(event.request.url).then(cached => {
-        if (cached) return cached;
-        return fetch(event.request).then(response => {
-          if (response && response.status === 200) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-          }
-          return response;
-        });
-      })
-    );
+  // HTML 페이지는 항상 네트워크에서 받기 (캐시 사용 안 함)
+  if (event.request.mode === 'navigate' || url.pathname.endsWith('.html')) {
+    event.respondWith(fetch(event.request));
     return;
   }
 
-  // 나머지 파일은 캐시 우선
+  // CSS/JS/이미지는 캐시 우선
   event.respondWith(
     caches.match(event.request).then(cached => {
       if (cached) return cached;
