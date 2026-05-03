@@ -163,17 +163,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const icon = btnSyncRefresh.querySelector('i');
             icon.style.transition = 'transform 0.6s';
             icon.style.transform = 'rotate(360deg)';
-            setTimeout(() => { icon.style.transition = ''; icon.style.transform = ''; }, 600);
+            showToast('데이터 불러오는 중...');
 
             if (window.loadFromCloud) {
-                const loaded = await window.loadFromCloud().catch(() => false);
-                if (loaded) {
-                    showToast('최신 데이터로 업데이트됐어요!');
-                    setTimeout(() => window.location.reload(), 800);
-                } else {
-                    showToast('이미 최신 상태예요!');
-                }
+                await window.loadFromCloud().catch(() => {});
             }
+            setTimeout(() => window.location.reload(), 800);
         });
     }
 

@@ -6,13 +6,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const icon = btnSyncRefresh.querySelector('i');
             icon.style.transition = 'transform 0.6s';
             icon.style.transform = 'rotate(360deg)';
-            setTimeout(() => { icon.style.transition = ''; icon.style.transform = ''; }, 600);
             if (window.loadFromCloud) {
-                const loaded = await window.loadFromCloud().catch(() => false);
-                if (loaded) {
-                    setTimeout(() => window.location.reload(), 800);
-                }
+                await window.loadFromCloud().catch(() => {});
             }
+            setTimeout(() => window.location.reload(), 800);
         });
     }
 

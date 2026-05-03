@@ -236,16 +236,19 @@ async function loadFromCloud() {
         const cloudItems = cloud.items || [];
         const localItems = JSON.parse(localStorage.getItem('itemFinder_data') || '[]');
 
-        if (cloudItems.length === 0 && localItems.length === 0) return false;
-
-        // 아이템 병합 (클라우드 + 로컬, 최신 우선)
+        // 클라우드 + 로컬 병합 (id 기준, createdAt 최신 우선)
         const mergedMap = new Map();
-        cloudItems.forEach(item => mergedMap.set(item.id, item));
         localItems.forEach(item => mergedMap.set(item.id, item));
+        cloudItems.forEach(item => {
+            const local = mergedMap.get(item.id);
+            if (!local || new Date(item.createdAt) >= new Date(local.createdAt)) {
+                mergedMap.set(item.id, item);
+            }
+        });
         const merged = Array.from(mergedMap.values());
         localStorage.setItem('itemFinder_data', JSON.stringify(merged));
 
-        // 방 목록
+        // 방 목록 - 클라우드 우선
         const cloudRooms = cloud.rooms || [];
         if (cloudRooms.length > 0) {
             localStorage.setItem('itemFinder_rooms', JSON.stringify(cloudRooms));
@@ -254,17 +257,14 @@ async function loadFromCloud() {
         // 테마
         if (cloud.theme) localStorage.setItem('itemFinder_theme', cloud.theme);
 
-        // 백업 (클라우드가 더 많으면 덮어씀)
+        // 백업 - 클라우드 우선
         const cloudBackups = cloud.backups || [];
-        const localBackups = JSON.parse(localStorage.getItem('itemFinder_backups') || '[]');
-        if (cloudBackups.length >= localBackups.length) {
+        if (cloudBackups.length > 0) {
             localStorage.setItem('itemFinder_backups', JSON.stringify(cloudBackups));
         }
 
-        // 변경사항 있으면 클라우드에 병합 결과 반영
-        if (localItems.length > 0 && cloudItems.length > 0) {
-            setTimeout(() => syncToCloud(), 1000);
-        }
+        // 병합 결과 클라우드에 반영
+        setTimeout(() => syncToCloud(), 1500);
 
         return true;
 
