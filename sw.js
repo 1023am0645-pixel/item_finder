@@ -1,6 +1,5 @@
-const CACHE_NAME = 'item-finder-v4';
+const CACHE_NAME = 'item-finder-v5';
 const urlsToCache = [
-  './',
   './index.html',
   './rooms.html',
   './backup.html',
@@ -8,6 +7,7 @@ const urlsToCache = [
   './js/script.js',
   './js/rooms.js',
   './js/backup.js',
+  './js/firebase-sync.js',
   './manifest.json',
   './assets/hero.png',
   './assets/alps.jpg',
@@ -36,17 +36,36 @@ self.addEventListener('activate', event => {
   );
 });
 
-// 요청 처리: 캐시 우선, 없으면 네트워크
+// 요청 처리
 self.addEventListener('fetch', event => {
+  const url = new URL(event.request.url);
+
   // 외부 CDN 요청은 네트워크 우선
-  if (!event.request.url.startsWith(self.location.origin)) {
+  if (url.origin !== self.location.origin) {
     event.respondWith(
       fetch(event.request).catch(() => caches.match(event.request))
     );
     return;
   }
 
-  // 로컬 파일은 캐시 우선 (오프라인에서도 앱 실행 가능)
+  // HTML 페이지 요청은 항상 정확한 URL로 캐시 조회 (rooms.html → rooms.html)
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      caches.match(event.request.url).then(cached => {
+        if (cached) return cached;
+        return fetch(event.request).then(response => {
+          if (response && response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          }
+          return response;
+        });
+      })
+    );
+    return;
+  }
+
+  // 나머지 파일은 캐시 우선
   event.respondWith(
     caches.match(event.request).then(cached => {
       if (cached) return cached;
