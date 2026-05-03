@@ -167,40 +167,52 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnInviteFamily) {
         btnInviteFamily.addEventListener('click', async () => {
             btnInviteFamily.disabled = true;
-            btnInviteFamily.textContent = '초대 링크 생성 중...';
+            btnInviteFamily.textContent = '초대 코드 생성 중...';
 
             const myNick = localStorage.getItem('kc_nickname') || '가족';
             const baseUrl = 'https://1023am0645-pixel.github.io/item_finder/';
+            let code = null;
 
-            let inviteUrl = baseUrl;
             if (window.createInviteCode) {
-                const code = await window.createInviteCode();
-                if (code) inviteUrl = `${baseUrl}?invite=${code}`;
+                code = await window.createInviteCode();
             }
-
-            const message = `${myNick}님이 '물건어디' 앱에 초대했어요! 📦\n\n우리 가족 물건 위치를 함께 관리해요.\n카카오 로그인 후 바로 데이터가 공유돼요 😊\n\n👉 ${inviteUrl}`;
 
             btnInviteFamily.disabled = false;
             btnInviteFamily.innerHTML = `<svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:#000;"><path d="M12 3c-5.52 0-10 3.58-10 8 0 2.86 1.83 5.37 4.6 6.78-.3.97-1.12 3.65-1.14 3.75-.03.14.05.21.16.2.14-.02 3.86-2.58 5.34-3.6.35.04.7.07 1.04.07 5.52 0 10-3.58 10-8s-4.48-8-10-8z"/></svg> 카카오톡으로 가족 초대하기`;
 
-            if (window.Kakao && window.Kakao.isInitialized()) {
-                try {
-                    window.Kakao.Share.sendDefault({
-                        objectType: 'text',
-                        text: message,
-                        link: { mobileWebUrl: inviteUrl, webUrl: inviteUrl },
-                        buttons: [{ title: '앱 열기', link: { mobileWebUrl: inviteUrl, webUrl: inviteUrl } }]
-                    });
-                } catch(e) {
-                    navigator.clipboard.writeText(message).then(() => {
-                        showToast('초대 링크가 복사됐어요! 카카오톡에 붙여넣기 해주세요.');
-                    });
+            if (!code) { showToast('초대 코드 생성에 실패했어요. 다시 시도해주세요.'); return; }
+
+            const inviteUrl = `${baseUrl}?invite=${code}`;
+            const message = `${myNick}님이 '물건어디' 앱에 초대했어요! 📦\n\n우리 가족 물건 위치를 함께 관리해요.\n아래 링크로 접속 후 카카오 로그인하면 데이터가 바로 공유돼요 😊\n\n👉 ${inviteUrl}\n\n(초대 코드: ${code} / 7일간 유효)`;
+
+            navigator.clipboard.writeText(message).then(() => {
+                showToast('초대 메시지가 복사됐어요! 카카오톡에 붙여넣기 해주세요 😊');
+            }).catch(() => {
+                alert(message);
+            });
+        });
+    }
+
+    // 초대 코드 직접 입력으로 그룹 합류
+    const btnJoinGroup = document.getElementById('btnJoinGroup');
+    if (btnJoinGroup) {
+        btnJoinGroup.addEventListener('click', async () => {
+            const code = prompt('받은 초대 코드를 입력해주세요:');
+            if (!code || !code.trim()) return;
+            btnJoinGroup.disabled = true;
+            btnJoinGroup.textContent = '합류 중...';
+            if (window.joinGroup) {
+                const joined = await window.joinGroup(code.trim().toUpperCase());
+                if (joined) {
+                    showToast('그룹에 합류했어요! 데이터를 불러올게요.');
+                    localStorage.removeItem('kc_group_id');
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    showToast('초대 코드가 유효하지 않아요. 다시 확인해주세요.');
                 }
-            } else {
-                navigator.clipboard.writeText(message).then(() => {
-                    showToast('초대 링크가 복사됐어요! 카카오톡에 붙여넣기 해주세요.');
-                }).catch(() => alert(message));
             }
+            btnJoinGroup.disabled = false;
+            btnJoinGroup.textContent = '초대 코드로 합류하기';
         });
     }
 

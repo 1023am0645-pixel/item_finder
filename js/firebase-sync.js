@@ -33,6 +33,17 @@ async function getOrCreateGroup() {
     if (!currentUserId) return null;
 
     try {
+        // 초대 코드 우선 처리 (기존 그룹보다 먼저 확인)
+        const pendingInvite = localStorage.getItem('pending_invite_code');
+        if (pendingInvite) {
+            const joined = await joinGroup(pendingInvite);
+            if (joined) {
+                localStorage.removeItem('pending_invite_code');
+                return currentGroupId;
+            }
+            localStorage.removeItem('pending_invite_code');
+        }
+
         // 기존 그룹 확인
         const res = await fetch(
             `${SUPABASE_URL}/rest/v1/user_groups?user_id=eq.${currentUserId}&select=group_id`,
@@ -44,16 +55,6 @@ async function getOrCreateGroup() {
             currentGroupId = data[0].group_id;
             localStorage.setItem('kc_group_id', currentGroupId);
             return currentGroupId;
-        }
-
-        // 초대 코드로 합류 대기 중인 경우 처리
-        const pendingInvite = localStorage.getItem('pending_invite_code');
-        if (pendingInvite) {
-            const joined = await joinGroup(pendingInvite);
-            if (joined) {
-                localStorage.removeItem('pending_invite_code');
-                return currentGroupId;
-            }
         }
 
         // 신규 그룹 생성
