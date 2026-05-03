@@ -79,11 +79,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const storedNick = localStorage.getItem('kc_nickname');
         if (storedNick) {
             localStorage.setItem('kc_logged_in', 'true');
-            updateAppTitle();
             loginOverlay.style.opacity = '0';
             setTimeout(() => {
-                loginOverlay.style.display = 'none';
-                showToast(`환영합니다, ${storedNick}님! (클라우드 동기화 완료)`);
+                // 새로고침으로 클라우드 데이터를 화면에 반영
+                window.location.reload();
             }, 400);
             return;
         }
