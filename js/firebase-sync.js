@@ -217,7 +217,8 @@ async function syncBackupsToCloud() {
 
 // 클라우드에서 그룹 데이터 불러오기
 async function loadFromCloud() {
-    if (!currentGroupId) await getOrCreateGroup();
+    // 항상 Supabase에서 최신 그룹ID 확인 (캐시 무시)
+    await getOrCreateGroup();
     if (!currentGroupId) return false;
 
     try {

@@ -312,54 +312,92 @@ document.addEventListener('DOMContentLoaded', () => {
             );
         }
 
-        // --- 모아보기 (Compact): Room cards in a 3-per-row grid ---
+        // --- 모아보기 (Compact): 방 별 아코디언 모아보기 ---
         if (currentViewMode === 'compact') {
-            allRoomsContainer.style.display = 'grid';
-            allRoomsContainer.style.gridTemplateColumns = 'repeat(3, 1fr)';
-            allRoomsContainer.style.gap = '1rem';
+            allRoomsContainer.style.display = 'flex';
+            allRoomsContainer.style.flexDirection = 'column';
+            allRoomsContainer.style.gap = '0.7rem';
 
             let renderedCount = 0;
             roomArray.forEach(room => {
                 const roomItems = filteredItems.filter(i => i.room === room);
                 if (searchQuery !== '' && roomItems.length === 0) return;
                 renderedCount++;
-                
+
+                const isExpanded = !!collapsedState[room];
+
                 const roomCard = document.createElement('div');
                 roomCard.style.background = 'var(--surface-color)';
                 roomCard.style.border = '1px solid var(--border-color)';
                 roomCard.style.borderRadius = '16px';
-                roomCard.style.padding = '1.2rem 0.8rem';
-                roomCard.style.textAlign = 'center';
-                roomCard.style.cursor = 'pointer';
-                roomCard.style.transition = 'all 0.2s';
+                roomCard.style.overflow = 'hidden';
                 roomCard.style.boxShadow = 'var(--shadow-sm)';
+                roomCard.style.transition = 'box-shadow 0.2s, border-color 0.2s';
                 roomCard.id = `room-${room}`;
 
+                let itemsHtml = '';
+                if (roomItems.length > 0) {
+                    itemsHtml = roomItems.map(item => {
+                        const photoTag = item.photo
+                            ? `<img src="${item.photo}" class="item-pic-zoom" style="width:26px;height:26px;object-fit:cover;border-radius:6px;cursor:pointer;border:1px solid var(--border-color);flex-shrink:0;">`
+                            : '';
+                        return `
+                            <div style="display:flex;align-items:center;gap:8px;padding:8px 1.2rem;border-top:1px solid var(--border-color);background:var(--bg-color);">
+                                <input type="checkbox" class="item-checkbox" data-id="${item.id}" style="width:16px;height:16px;cursor:pointer;accent-color:var(--primary-color);flex-shrink:0;">
+                                <span style="flex:1;color:var(--text-main);font-weight:500;font-size:0.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${item.name}</span>
+                                ${item.memo ? `<span style="font-size:0.75rem;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:90px;flex-shrink:0;">${item.memo}</span>` : ''}
+                                ${photoTag}
+                                <button class="item-delete-btn" data-id="${item.id}" data-name="${item.name}" style="background:none;border:none;color:#ef4444;cursor:pointer;padding:4px;opacity:0.35;transition:opacity 0.2s;flex-shrink:0;" title="삭제">
+                                    <i data-lucide="x" style="width:13px;height:13px;"></i>
+                                </button>
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    itemsHtml = `<div style="padding:12px 1.2rem;text-align:center;font-size:0.83rem;color:var(--text-muted);border-top:1px solid var(--border-color);background:var(--bg-color);">비어있음</div>`;
+                }
+
                 roomCard.innerHTML = `
-                    <div style="font-weight:700; font-size:1rem; color:var(--text-main); margin-bottom:6px;">
-                        <i data-lucide="door-closed" style="width:18px;height:18px;vertical-align:middle;margin-right:4px;color:var(--primary-color);"></i>${room}
+                    <div class="room-card-header" style="display:flex;align-items:center;justify-content:space-between;padding:1rem 1.2rem;cursor:pointer;user-select:none;">
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <i data-lucide="door-closed" style="width:18px;height:18px;color:var(--primary-color);flex-shrink:0;"></i>
+                            <span style="font-weight:700;font-size:1rem;color:var(--text-main);">${room}</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <span style="font-size:0.82rem;color:var(--text-muted);background:var(--bg-color);padding:2px 10px;border-radius:20px;border:1px solid var(--border-color);">${roomItems.length}개</span>
+                            <i data-lucide="${isExpanded ? 'chevron-up' : 'chevron-down'}" style="width:18px;height:18px;color:var(--text-muted);"></i>
+                        </div>
                     </div>
-                    <div style="font-size:0.85rem; color:var(--text-muted);">${roomItems.length}개 보관</div>
+                    <div class="room-items-accordion" style="display:${isExpanded ? 'block' : 'none'};">
+                        ${itemsHtml}
+                    </div>
                 `;
 
-                roomCard.addEventListener('mouseover', () => {
-                    roomCard.style.transform = 'translateY(-3px)';
-                    roomCard.style.boxShadow = 'var(--shadow-md)';
-                    roomCard.style.borderColor = 'var(--primary-color)';
+                roomCard.querySelector('.room-card-header').addEventListener('click', () => {
+                    collapsedState[room] = !collapsedState[room];
+                    renderRoomsContent();
                 });
-                roomCard.addEventListener('mouseout', () => {
-                    roomCard.style.transform = '';
-                    roomCard.style.boxShadow = 'var(--shadow-sm)';
-                    roomCard.style.borderColor = 'var(--border-color)';
-                });
-                roomCard.addEventListener('click', () => {
-                    currentViewMode = 'detail';
-                    updateViewMode();
-                    setTimeout(() => {
-                        const el = document.getElementById(`room-${room}`);
-                        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }, 100);
-                });
+
+                setTimeout(() => {
+                    roomCard.querySelectorAll('.item-checkbox').forEach(cb => {
+                        allCheckboxesList.push(cb);
+                        cb.addEventListener('change', () => syncGlobalAction());
+                    });
+                    roomCard.querySelectorAll('.item-delete-btn').forEach(delBtn => {
+                        delBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            const id = delBtn.getAttribute('data-id');
+                            const name = delBtn.getAttribute('data-name');
+                            if (confirm(`'${name}' 기록을 삭제하시겠습니까?`)) {
+                                savedItems = savedItems.filter(i => i.id !== id);
+                                localStorage.setItem('itemFinder_data', JSON.stringify(savedItems));
+                                if (window.syncToCloud) syncToCloud();
+                                showToast('물건 기록이 삭제되었습니다.');
+                                renderRoomsContent();
+                            }
+                        });
+                    });
+                }, 0);
 
                 allRoomsContainer.appendChild(roomCard);
             });
@@ -370,6 +408,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (window.lucide) lucide.createIcons();
+            attachZoomLogic();
             return;
         }
 
