@@ -68,7 +68,10 @@ async function getOrCreateGroup() {
             body: JSON.stringify({
                 group_id: newGroupId,
                 items: JSON.parse(localStorage.getItem('itemFinder_data') || '[]'),
-                rooms: JSON.parse(localStorage.getItem('itemFinder_rooms') || '[]'),
+                rooms: {
+                    list: JSON.parse(localStorage.getItem('itemFinder_rooms') || '[]'),
+                    zones: JSON.parse(localStorage.getItem('itemFinder_zones') || '{}')
+                },
                 backups: JSON.parse(localStorage.getItem('itemFinder_backups') || '[]'),
                 theme: localStorage.getItem('itemFinder_theme') || 'light',
                 updated_at: new Date().toISOString()
@@ -184,7 +187,10 @@ async function syncToCloud() {
             body: JSON.stringify({
                 group_id: currentGroupId,
                 items: JSON.parse(localStorage.getItem('itemFinder_data') || '[]'),
-                rooms: JSON.parse(localStorage.getItem('itemFinder_rooms') || '[]'),
+                rooms: {
+                    list: JSON.parse(localStorage.getItem('itemFinder_rooms') || '[]'),
+                    zones: JSON.parse(localStorage.getItem('itemFinder_zones') || '{}')
+                },
                 backups: JSON.parse(localStorage.getItem('itemFinder_backups') || '[]'),
                 theme: localStorage.getItem('itemFinder_theme') || 'light',
                 updated_at: new Date().toISOString()
@@ -249,10 +255,17 @@ async function loadFromCloud() {
         const merged = Array.from(mergedMap.values());
         localStorage.setItem('itemFinder_data', JSON.stringify(merged));
 
-        // 방 목록 - 클라우드 우선
-        const cloudRooms = cloud.rooms || [];
-        if (cloudRooms.length > 0) {
-            localStorage.setItem('itemFinder_rooms', JSON.stringify(cloudRooms));
+        // 방 목록 + 구역 정의 - 클라우드 우선
+        const cloudRoomsRaw = cloud.rooms;
+        if (cloudRoomsRaw) {
+            if (Array.isArray(cloudRoomsRaw)) {
+                // 구버전 포맷 (rooms가 배열)
+                if (cloudRoomsRaw.length > 0) localStorage.setItem('itemFinder_rooms', JSON.stringify(cloudRoomsRaw));
+            } else {
+                // 신버전 포맷 (rooms가 {list, zones} 객체)
+                if (cloudRoomsRaw.list && cloudRoomsRaw.list.length > 0) localStorage.setItem('itemFinder_rooms', JSON.stringify(cloudRoomsRaw.list));
+                if (cloudRoomsRaw.zones && Object.keys(cloudRoomsRaw.zones).length > 0) localStorage.setItem('itemFinder_zones', JSON.stringify(cloudRoomsRaw.zones));
+            }
         }
 
         // 테마

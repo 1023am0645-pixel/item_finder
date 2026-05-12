@@ -61,6 +61,9 @@ document.addEventListener('DOMContentLoaded', () => {
             card.querySelector('.btn-restore').addEventListener('click', () => {
                 if(confirm(`'${localDateStr}' 백업 지점으로 전체 물건 데이터를 복구하시겠습니까?\n(현재의 기록된 물건들은 이 백업본으로 덮어씌워집니다)`)) {
                     localStorage.setItem('itemFinder_data', JSON.stringify(b.data));
+                    if (b.zones) localStorage.setItem('itemFinder_zones', JSON.stringify(b.zones));
+                    if (b.rooms && b.rooms.length > 0) localStorage.setItem('itemFinder_rooms', JSON.stringify(b.rooms));
+                    if (window.syncToCloud) syncToCloud();
                     showToast('데이터가 완벽하게 복구되었습니다!');
                 }
             });

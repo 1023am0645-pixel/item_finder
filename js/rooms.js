@@ -108,11 +108,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 id: Date.now().toString(),
                 date: new Date().toISOString(),
                 count: parsed.length,
-                data: parsed
+                data: parsed,
+                zones: JSON.parse(localStorage.getItem('itemFinder_zones') || '{}'),
+                rooms: JSON.parse(localStorage.getItem('itemFinder_rooms') || '[]')
             };
-            
+
             backups.unshift(newBackup);
             localStorage.setItem('itemFinder_backups', JSON.stringify(backups));
+            if(window.syncBackupsToCloud) syncBackupsToCloud();
             showToast('현재 물건 상태가 성공적으로 백업되었습니다!');
             
             if(window.lucide) {
@@ -901,9 +904,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             let backups = JSON.parse(localStorage.getItem('itemFinder_backups')) || [];
-            const newBackup = { id: Date.now().toString(), date: new Date().toISOString(), count: parsed.length, data: parsed };
+            const newBackup = {
+                id: Date.now().toString(), date: new Date().toISOString(), count: parsed.length, data: parsed,
+                zones: JSON.parse(localStorage.getItem('itemFinder_zones') || '{}'),
+                rooms: JSON.parse(localStorage.getItem('itemFinder_rooms') || '[]')
+            };
             backups.unshift(newBackup);
             localStorage.setItem('itemFinder_backups', JSON.stringify(backups));
+            if(window.syncBackupsToCloud) syncBackupsToCloud();
             showToast('현재 물건 상태가 성공적으로 백업되었습니다!');
             if(window.lucide) {
                 btnBackup.innerHTML = '<i data-lucide="check-circle" style="color:#22c55e;"></i>';
