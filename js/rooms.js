@@ -174,22 +174,53 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('itemFinder_rooms', JSON.stringify(roomArray));
     }
 
+    function loadZones() {
+        return JSON.parse(localStorage.getItem('itemFinder_zones') || '{}');
+    }
+    function saveZones(zones) {
+        localStorage.setItem('itemFinder_zones', JSON.stringify(zones));
+    }
+
     function renderRoomManagerList() {
         if(!roomManagerList) return;
         roomManagerList.innerHTML = '';
+        const zones = loadZones();
+
         roomArray.forEach((room, index) => {
-            const row = document.createElement('div');
-            row.style.display = 'flex';
-            row.style.justifyContent = 'space-between';
-            row.style.padding = '6px 10px';
-            row.style.background = 'var(--surface-color)';
-            row.style.borderRadius = '8px';
-            row.style.alignItems = 'center';
-            row.innerHTML = `<span style="font-size:0.95rem;">${room}</span><button class="delete-room-btn" data-index="${index}" style="background:none;border:none;color:#ef4444;cursor:pointer;padding:4px;"><i data-lucide="x" style="width:16px;height:16px;"></i></button>`;
-            roomManagerList.appendChild(row);
+            const roomZones = zones[room] || [];
+
+            const wrapper = document.createElement('div');
+            wrapper.style.cssText = 'background:var(--surface-color);border-radius:10px;border:1px solid var(--border-color);overflow:hidden;margin-bottom:4px;';
+
+            const zoneChips = roomZones.map((z, zi) =>
+                `<span style="display:inline-flex;align-items:center;gap:3px;background:var(--bg-color);border:1px solid var(--border-color);border-radius:12px;padding:2px 8px;font-size:0.76rem;">
+                    ${z}
+                    <button class="delete-zone-btn" data-room="${room}" data-zi="${zi}" style="background:none;border:none;color:#ef4444;cursor:pointer;padding:0;line-height:1;display:flex;align-items:center;">
+                        <i data-lucide="x" style="width:10px;height:10px;"></i>
+                    </button>
+                </span>`
+            ).join('');
+
+            wrapper.innerHTML = `
+                <div style="display:flex;justify-content:space-between;padding:8px 10px;align-items:center;">
+                    <span style="font-size:0.9rem;font-weight:600;">${room}</span>
+                    <button class="delete-room-btn" data-index="${index}" style="background:none;border:none;color:#ef4444;cursor:pointer;padding:4px;">
+                        <i data-lucide="x" style="width:16px;height:16px;"></i>
+                    </button>
+                </div>
+                <div style="padding:4px 10px 8px;background:var(--bg-color);border-top:1px solid var(--border-color);">
+                    <div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:5px;">구역</div>
+                    <div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;">
+                        ${zoneChips}
+                        <button class="add-zone-btn" data-room="${room}" style="background:none;border:1px dashed var(--border-color);color:var(--text-muted);border-radius:12px;padding:2px 10px;font-size:0.76rem;cursor:pointer;">+ 추가</button>
+                    </div>
+                </div>
+            `;
+            roomManagerList.appendChild(wrapper);
         });
+
         roomManagerList.querySelectorAll('.delete-room-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+            btn.addEventListener('click', () => {
                 const idx = parseInt(btn.getAttribute('data-index'));
                 if(confirm(`'${roomArray[idx]}' 방을 삭제하시겠습니까?\n(방 안에 있는 물건은 삭제되지 않습니다)`)) {
                     roomArray.splice(idx, 1);
@@ -199,6 +230,35 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         });
+
+        roomManagerList.querySelectorAll('.delete-zone-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const room = btn.getAttribute('data-room');
+                const zi = parseInt(btn.getAttribute('data-zi'));
+                const z = loadZones();
+                if (z[room]) {
+                    z[room].splice(zi, 1);
+                    if (z[room].length === 0) delete z[room];
+                    saveZones(z);
+                }
+                renderRoomManagerList();
+            });
+        });
+
+        roomManagerList.querySelectorAll('.add-zone-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const room = btn.getAttribute('data-room');
+                const newZone = prompt(`'${room}' 방의 구역 이름을 입력하세요\n(예: A-1, 상단 선반, 왼쪽 칸)`);
+                if (newZone && newZone.trim()) {
+                    const z = loadZones();
+                    if (!z[room]) z[room] = [];
+                    z[room].push(newZone.trim());
+                    saveZones(z);
+                    renderRoomManagerList();
+                }
+            });
+        });
+
         if(window.lucide) lucide.createIcons();
     }
     
@@ -358,6 +418,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Collapsed state map (true = closed, false = open)
     let collapsedState = {};
 
+    function getGridCols() {
+        if (window.innerWidth <= 540) return 1;
+        if (window.innerWidth <= 900) return 2;
+        return 3;
+    }
+
     function renderRoomsContent() {
         allRoomsContainer.innerHTML = '';
         allCheckboxesList = []; // reset
@@ -405,6 +471,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div style="display:flex;align-items:center;gap:8px;padding:8px 1.2rem;border-top:1px solid var(--border-color);background:var(--bg-color);">
                                 <input type="checkbox" class="item-checkbox" data-id="${item.id}" style="width:16px;height:16px;cursor:pointer;accent-color:var(--primary-color);flex-shrink:0;">
                                 <span style="flex:1;color:var(--text-main);font-weight:500;font-size:0.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${item.name}</span>
+                                ${item.zone ? `<span style="font-size:0.7rem;color:#6366f1;background:rgba(99,102,241,0.1);padding:1px 6px;border-radius:8px;border:1px solid rgba(99,102,241,0.2);flex-shrink:0;white-space:nowrap;">${item.zone}</span>` : ''}
                                 ${item.memo ? `<span style="font-size:0.75rem;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:90px;flex-shrink:0;">${item.memo}</span>` : ''}
                                 ${photoTag}
                                 <button class="item-delete-btn" data-id="${item.id}" data-name="${item.name}" style="background:none;border:none;color:#ef4444;cursor:pointer;padding:4px;opacity:0.35;transition:opacity 0.2s;flex-shrink:0;" title="삭제">
@@ -487,7 +554,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             allRoomsContainer.style.display = 'grid';
-            allRoomsContainer.style.gridTemplateColumns = 'repeat(3, 1fr)';
+            allRoomsContainer.style.gridTemplateColumns = `repeat(${getGridCols()}, 1fr)`;
             allRoomsContainer.style.gap = '1rem';
 
             selectedRooms.forEach(room => {
@@ -511,6 +578,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div style="display:flex; align-items:center; gap:6px; padding:4px 6px; background:var(--bg-color); border-radius:8px; font-size:0.85rem;">
                                 <input type="checkbox" class="item-checkbox" data-id="${item.id}" style="width:16px;height:16px;cursor:pointer;accent-color:var(--primary-color);flex-shrink:0;">
                                 <span style="flex:1; color:var(--text-main); font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.name}</span>
+                                ${item.zone ? `<span style="font-size:0.7rem;color:#6366f1;background:rgba(99,102,241,0.1);padding:1px 6px;border-radius:8px;border:1px solid rgba(99,102,241,0.2);flex-shrink:0;white-space:nowrap;">${item.zone}</span>` : ''}
                                 ${photoTag}
                                 <button class="item-delete-btn" data-id="${item.id}" data-name="${item.name}" style="background:none;border:none;color:#ef4444;cursor:pointer;padding:2px;opacity:0.4;transition:opacity 0.2s;flex-shrink:0;" title="삭제">
                                     <i data-lucide="x" style="width:12px;height:12px;"></i>
@@ -583,7 +651,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // --- 전체보기 (Flat): All items as individual cards in 3-col grid with checkboxes ---
         if (currentViewMode === 'flat') {
             allRoomsContainer.style.display = 'grid';
-            allRoomsContainer.style.gridTemplateColumns = 'repeat(3, 1fr)';
+            allRoomsContainer.style.gridTemplateColumns = `repeat(${getGridCols()}, 1fr)`;
             allRoomsContainer.style.gap = '1rem';
 
             const sortedItems = [...filteredItems].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ko'));
@@ -624,6 +692,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     ${item.memo ? `<div style="font-size:0.75rem; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%;">${item.memo}</div>` : ''}
                     ${photoHtml}
                     <span style="font-size:0.7rem; color:var(--primary-color); background:rgba(255,140,66,0.1); padding:2px 8px; border-radius:6px; font-weight:600; margin-top:2px;">${item.room || '미지정'}</span>
+                    ${item.zone ? `<span style="font-size:0.7rem; color:#6366f1; background:rgba(99,102,241,0.1); padding:2px 8px; border-radius:6px; font-weight:600;">${item.zone}</span>` : ''}
                 `;
 
                 card.addEventListener('mouseover', () => {
@@ -675,7 +744,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // --- 펼쳐보기 (Detail): Room cards in 3-col grid, each showing its items with checkboxes ---
         allRoomsContainer.style.display = 'grid';
-        allRoomsContainer.style.gridTemplateColumns = 'repeat(3, 1fr)';
+        allRoomsContainer.style.gridTemplateColumns = `repeat(${getGridCols()}, 1fr)`;
         allRoomsContainer.style.gap = '1rem';
 
         roomArray.forEach(room => {
@@ -701,6 +770,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div style="display:flex; align-items:center; gap:6px; padding:4px 6px; background:var(--bg-color); border-radius:8px; font-size:0.85rem;">
                             <input type="checkbox" class="item-checkbox" data-id="${item.id}" style="width:16px;height:16px;cursor:pointer;accent-color:var(--primary-color);flex-shrink:0;">
                             <span style="flex:1; color:var(--text-main); font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.name}</span>
+                            ${item.zone ? `<span style="font-size:0.7rem;color:#6366f1;background:rgba(99,102,241,0.1);padding:1px 6px;border-radius:8px;border:1px solid rgba(99,102,241,0.2);flex-shrink:0;white-space:nowrap;">${item.zone}</span>` : ''}
                             ${photoTag}
                             <button class="item-delete-btn" data-id="${item.id}" data-name="${item.name}" style="background:none;border:none;color:#ef4444;cursor:pointer;padding:2px;opacity:0.4;transition:opacity 0.2s;flex-shrink:0;" title="삭제">
                                 <i data-lucide="x" style="width:12px;height:12px;"></i>

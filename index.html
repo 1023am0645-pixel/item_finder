@@ -103,6 +103,18 @@
                         <input type="text" id="itemMemo" placeholder="간단한 메모 (예: 두번째 서랍)" class="memo-input" style="width:100%;">
                     </div>
                 </div>
+                <div id="zoneSelectRow" style="display:none; margin-top:0.6rem;">
+                    <div class="dropdown-wrapper" style="max-width:240px;">
+                        <button type="button" id="btnSelectZone" class="dropdown-btn">
+                            <i data-lucide="map-pin" style="width:16px;height:16px;margin-right:4px;flex-shrink:0;"></i>
+                            <span id="selectedZoneText">구역 선택 (선택사항)</span>
+                            <i data-lucide="chevron-down"></i>
+                        </button>
+                        <div id="zoneDropdown" class="dropdown-menu hidden">
+                            <div id="zoneOptionList"></div>
+                        </div>
+                    </div>
+                </div>
                 <button type="button" id="btnSave" class="save-btn"><i data-lucide="save" style="margin-right:8px; vertical-align:middle; display:inline-block;"></i>물건 저장하기</button>
             </div>
 

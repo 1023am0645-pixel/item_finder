@@ -317,11 +317,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // LocalStorage for saved items
-    // Structure: [{ id, name, room, memo, date }]
+    // Structure: [{ id, name, room, zone, memo, photo, createdAt }]
     let savedItems = JSON.parse(localStorage.getItem('itemFinder_data')) || [];
 
     // State
     let currentSelectedRoom = null; // for adding items
+    let currentSelectedZone = null; // for adding items (optional)
+
+    function loadZoneData() {
+        return JSON.parse(localStorage.getItem('itemFinder_zones') || '{}');
+    }
 
     // 1. Render Rooms Grid
     function renderRooms() {
@@ -441,29 +446,94 @@ document.addEventListener('DOMContentLoaded', () => {
 
         function selectRoom(roomName) {
         currentSelectedRoom = roomName;
+        currentSelectedZone = null;
         selectedRoomText.textContent = roomName;
         roomSelectBtn.classList.add('filled');
-        if(roomDropdown) roomDropdown.classList.add('hidden'); // Close dropdown
-        renderRooms(); // Re-render to update selected UI class
-        
-        // Also perform search filtering by room if the input is empty
+        if(roomDropdown) roomDropdown.classList.add('hidden');
+        renderRooms();
+
+        // 구역 드롭다운 처리
+        const zones = loadZoneData();
+        const roomZones = zones[roomName] || [];
+        const zoneRow = document.getElementById('zoneSelectRow');
+        const selectedZoneText = document.getElementById('selectedZoneText');
+        const btnSelectZone = document.getElementById('btnSelectZone');
+        if (zoneRow) {
+            if (roomZones.length > 0) {
+                zoneRow.style.display = 'block';
+                if (selectedZoneText) selectedZoneText.textContent = '구역 선택 (선택사항)';
+                if (btnSelectZone) btnSelectZone.classList.remove('filled');
+                populateZoneDropdown(roomZones);
+            } else {
+                zoneRow.style.display = 'none';
+            }
+        }
+
         if(itemNameInput.value.trim() === '') {
             renderSearchResults(savedItems.filter(i => i.room === roomName));
         }
     }
 
+    function populateZoneDropdown(zoneList) {
+        const optList = document.getElementById('zoneOptionList');
+        const zoneDropdownEl = document.getElementById('zoneDropdown');
+        const btnSelectZone = document.getElementById('btnSelectZone');
+        const selectedZoneText = document.getElementById('selectedZoneText');
+        if (!optList) return;
+        optList.innerHTML = '';
+
+        const noneBtn = document.createElement('button');
+        noneBtn.className = 'room-btn';
+        noneBtn.textContent = '구역 없음';
+        noneBtn.addEventListener('click', () => {
+            currentSelectedZone = null;
+            if (selectedZoneText) selectedZoneText.textContent = '구역 선택 (선택사항)';
+            if (btnSelectZone) btnSelectZone.classList.remove('filled');
+            if (zoneDropdownEl) zoneDropdownEl.classList.add('hidden');
+        });
+        optList.appendChild(noneBtn);
+
+        zoneList.forEach(zone => {
+            const btn = document.createElement('button');
+            btn.className = 'room-btn';
+            btn.textContent = zone;
+            btn.addEventListener('click', () => {
+                currentSelectedZone = zone;
+                if (selectedZoneText) selectedZoneText.textContent = zone;
+                if (btnSelectZone) btnSelectZone.classList.add('filled');
+                if (zoneDropdownEl) zoneDropdownEl.classList.add('hidden');
+            });
+            optList.appendChild(btn);
+        });
+        if (window.lucide) lucide.createIcons();
+    }
+
     const roomDropdown = document.getElementById('roomDropdown');
+    const zoneDropdownEl = document.getElementById('zoneDropdown');
+    const btnSelectZone = document.getElementById('btnSelectZone');
 
     // Room Select Button logic (Toggle Dropdown)
     roomSelectBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         roomDropdown.classList.toggle('hidden');
+        if (zoneDropdownEl) zoneDropdownEl.classList.add('hidden');
     });
 
-    // Close dropdown when clicking outside
+    if (btnSelectZone) {
+        btnSelectZone.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (zoneDropdownEl) zoneDropdownEl.classList.toggle('hidden');
+            roomDropdown.classList.add('hidden');
+        });
+    }
+
+    // Close dropdowns when clicking outside
     document.addEventListener('click', (e) => {
         if (!roomDropdown.contains(e.target) && !roomSelectBtn.contains(e.target)) {
             roomDropdown.classList.add('hidden');
+        }
+        if (zoneDropdownEl && btnSelectZone && !zoneDropdownEl.contains(e.target) && !btnSelectZone.contains(e.target)) {
+            zoneDropdownEl.classList.add('hidden');
         }
     });
 
@@ -487,6 +557,7 @@ document.addEventListener('DOMContentLoaded', () => {
             id: Date.now().toString(),
             name: name,
             room: room,
+            zone: currentSelectedZone || null,
             memo: memo,
             photo: currentPhotoBase64,
             createdAt: new Date().toISOString()
@@ -512,9 +583,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         currentSelectedRoom = null;
+        currentSelectedZone = null;
         roomSelectBtn.classList.remove('filled');
-        renderRooms(); // To clear selection
-        renderSearchResults([]); // Clear search view
+        const zoneRowEl = document.getElementById('zoneSelectRow');
+        const selZoneText = document.getElementById('selectedZoneText');
+        if (zoneRowEl) zoneRowEl.style.display = 'none';
+        if (selZoneText) selZoneText.textContent = '구역 선택 (선택사항)';
+        if (btnSelectZone) btnSelectZone.classList.remove('filled');
+        renderRooms();
+        renderSearchResults([]);
     });
 
     // 3. Search / Input Filter Logic
@@ -562,6 +639,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <h4>${item.name}</h4>
                     <div>
                         <span class="result-badge">${item.room}</span>
+                        ${item.zone ? `<span class="result-badge" style="background:rgba(99,102,241,0.1);color:#6366f1;border-color:rgba(99,102,241,0.3);">${item.zone}</span>` : ''}
                         ${item.memo ? `<p class="result-memo">📝 ${item.memo}</p>` : ''}
                     </div>
                 </div>
