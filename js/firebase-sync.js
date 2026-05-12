@@ -46,7 +46,7 @@ async function getOrCreateGroup() {
 
         // 기존 그룹 확인
         const res = await fetch(
-            `${SUPABASE_URL}/rest/v1/user_groups?user_id=eq.${currentUserId}&select=group_id`,
+            `${SUPABASE_URL}/rest/v1/user_groups?user_id=eq.${currentUserId}&select=group_id,nickname`,
             { headers }
         );
         const data = await res.json();
@@ -54,6 +54,10 @@ async function getOrCreateGroup() {
         if (data && data.length > 0) {
             currentGroupId = data[0].group_id;
             localStorage.setItem('kc_group_id', currentGroupId);
+            // 저장된 닉네임이 있으면 자동 복원 (재로그인 시 닉네임 재입력 불필요)
+            if (data[0].nickname && !localStorage.getItem('kc_nickname')) {
+                localStorage.setItem('kc_nickname', data[0].nickname);
+            }
             return currentGroupId;
         }
 
@@ -285,6 +289,19 @@ async function loadFromCloud() {
     }
 }
 
+// 닉네임을 Supabase user_groups에 저장
+async function updateNicknameInCloud(nickname) {
+    if (!currentUserId) return;
+    try {
+        await fetch(
+            `${SUPABASE_URL}/rest/v1/user_groups?user_id=eq.${currentUserId}`,
+            { method: 'PATCH', headers, body: JSON.stringify({ nickname }) }
+        );
+    } catch (e) {
+        console.warn('[Supabase] 닉네임 업데이트 실패:', e.message);
+    }
+}
+
 // 전역 노출
 window.syncToCloud = syncToCloud;
 window.loadFromCloud = loadFromCloud;
@@ -293,6 +310,7 @@ window.syncBackupsToCloud = syncBackupsToCloud;
 window.createInviteCode = createInviteCode;
 window.joinGroup = joinGroup;
 window.getOrCreateGroup = getOrCreateGroup;
+window.updateNicknameInCloud = updateNicknameInCloud;
 
 // 저장된 사용자/그룹 ID 복원
 const storedUserId = localStorage.getItem('kc_user_id');

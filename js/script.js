@@ -91,10 +91,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 loginOverlay.style.display = 'none';
                 showToast(`환영합니다, ${finalNick}님!`);
             }, 400);
-            // 백그라운드에서 클라우드 싱크 (화면 전환 블로킹 없음)
-            if (window.syncToCloud) {
-                window.syncToCloud().catch(() => {});
-            }
+            if (window.updateNicknameInCloud) window.updateNicknameInCloud(finalNick).catch(() => {});
+            if (window.syncToCloud) window.syncToCloud().catch(() => {});
         };
     }
 
@@ -239,6 +237,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.setItem('kc_nickname', nick.trim());
                 updateAppTitle();
                 showToast('닉네임이 변경되었습니다.');
+                if (window.updateNicknameInCloud) window.updateNicknameInCloud(nick.trim()).catch(() => {});
             }
         });
         btnKakaoLogout.addEventListener('click', () => {
@@ -413,6 +412,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const idx = parseInt(btn.getAttribute('data-index'));
                 if(confirm('이 시점으로 기기 데이터를 복원하시겠습니까? (현재 기록은 삭제됩니다)')) {
                     localStorage.setItem('itemFinder_data', JSON.stringify(backups[idx].data));
+                    if (backups[idx].zones) localStorage.setItem('itemFinder_zones', JSON.stringify(backups[idx].zones));
+                    if (backups[idx].rooms && backups[idx].rooms.length > 0) localStorage.setItem('itemFinder_rooms', JSON.stringify(backups[idx].rooms));
                     if(window.syncToCloud) syncToCloud();
                     showToast('데이터가 성공적으로 복원되었습니다.');
                     setTimeout(() => window.location.reload(), 1000);
@@ -717,9 +718,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 id: Date.now().toString(),
                 date: new Date().toISOString(),
                 count: parsed.length,
-                data: parsed
+                data: parsed,
+                zones: JSON.parse(localStorage.getItem('itemFinder_zones') || '{}'),
+                rooms: JSON.parse(localStorage.getItem('itemFinder_rooms') || '[]')
             };
-            
+
             backups.unshift(newBackup);
             localStorage.setItem('itemFinder_backups', JSON.stringify(backups));
             if (window.syncBackupsToCloud) window.syncBackupsToCloud().catch(() => {});

@@ -182,6 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     function saveZones(zones) {
         localStorage.setItem('itemFinder_zones', JSON.stringify(zones));
+        if (window.syncToCloud) syncToCloud().catch(() => {});
     }
 
     function renderRoomManagerList() {
