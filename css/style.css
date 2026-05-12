@@ -464,3 +464,23 @@ header {
     flex-direction: column;
   }
 }
+
+/* 모바일 가로 모드 */
+@media (max-height: 500px) and (orientation: landscape) {
+  .app-container {
+    padding: 0.8rem 1.2rem;
+    max-width: 100%;
+  }
+  .hero-section {
+    display: none;
+  }
+  header .subtitle {
+    display: none;
+  }
+  #allRoomsContainer {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+  #pickRoomFilterBar {
+    padding: 0.1rem 0 0.6rem;
+  }
+}
