@@ -182,81 +182,97 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderRoomManagerList() {
-        if(!roomManagerList) return;
-        roomManagerList.innerHTML = '';
-        var zones = loadZones();
+        if (!roomManagerList) return;
+        while (roomManagerList.firstChild) roomManagerList.removeChild(roomManagerList.firstChild);
+        const zones = loadZones();
 
-        for (var i = 0; i < roomArray.length; i++) {
-            (function(room, index) {
-                var roomZones = zones[room] || [];
+        roomArray.forEach((room, index) => {
+            const roomZones = zones[room] || [];
 
-                // 구역 칩 HTML 문자열 구성 (백틱 없이)
-                var chipsHtml = '';
-                for (var zi = 0; zi < roomZones.length; zi++) {
-                    chipsHtml += '<span style="display:inline-flex;align-items:center;gap:3px;background:rgba(128,128,128,0.1);border:1px solid rgba(128,128,128,0.3);border-radius:10px;padding:2px 8px;font-size:0.78rem;">'
-                        + roomZones[zi]
-                        + ' <button class="dz-btn" data-room="' + room + '" data-zi="' + zi + '" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:0.8rem;padding:0 0 0 2px;line-height:1;">✕</button></span>';
+            const row = document.createElement('div');
+            row.style.cssText = 'border-radius:10px;border:1px solid var(--border-color);background:var(--surface-color);margin-bottom:8px;';
+
+            // 헤더: 방 이름 + 삭제 버튼
+            const header = document.createElement('div');
+            header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:10px 14px;';
+
+            const nameSpan = document.createElement('span');
+            nameSpan.style.cssText = 'font-size:0.95rem;font-weight:700;color:var(--text-main);';
+            nameSpan.textContent = room;
+
+            const delRoomBtn = document.createElement('button');
+            delRoomBtn.style.cssText = 'background:none;border:1px solid rgba(239,68,68,0.4);border-radius:8px;color:#ef4444;cursor:pointer;font-size:0.78rem;padding:3px 8px;font-weight:600;';
+            delRoomBtn.textContent = '삭제';
+            delRoomBtn.addEventListener('click', () => {
+                if (confirm(room + ' 방을 삭제하시겠습니까?\n(물건 기록은 유지됩니다)')) {
+                    roomArray.splice(index, 1);
+                    saveRooms();
+                    renderRoomManagerList();
+                    renderRoomsContent();
                 }
+            });
 
-                var row = document.createElement('div');
-                row.style.display = 'flex';
-                row.style.flexDirection = 'column';
-                row.style.borderRadius = '8px';
-                row.style.border = '1px solid rgba(128,128,128,0.3)';
-                row.style.marginBottom = '4px';
-                row.style.overflow = 'hidden';
+            header.appendChild(nameSpan);
+            header.appendChild(delRoomBtn);
+            row.appendChild(header);
 
-                row.innerHTML = '<div style="display:flex;justify-content:space-between;padding:7px 10px;align-items:center;">'
-                    + '<span style="font-size:0.95rem;font-weight:600;">' + room + '</span>'
-                    + '<button class="dr-btn" data-index="' + index + '" style="background:none;border:none;color:#ef4444;cursor:pointer;padding:4px;font-size:1rem;line-height:1;">✕</button>'
-                    + '</div>'
-                    + '<div style="padding:4px 10px 8px;background:rgba(128,128,128,0.05);border-top:1px solid rgba(128,128,128,0.2);">'
-                    + '<div style="font-size:0.72rem;color:#888;margin-bottom:5px;">구역</div>'
-                    + '<div class="zone-wrap" style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;">'
-                    + chipsHtml
-                    + '<button class="az-btn" data-room="' + room + '" style="background:none;border:1px dashed rgba(128,128,128,0.4);border-radius:10px;padding:2px 9px;font-size:0.76rem;cursor:pointer;">+ 추가</button>'
-                    + '</div>'
-                    + '</div>';
+            // 구역 섹션
+            const zoneSection = document.createElement('div');
+            zoneSection.style.cssText = 'padding:6px 14px 12px;border-top:1px solid var(--border-color);';
 
-                roomManagerList.appendChild(row);
+            const zoneTitle = document.createElement('div');
+            zoneTitle.style.cssText = 'font-size:0.72rem;color:var(--text-muted);margin-bottom:6px;';
+            zoneTitle.textContent = '구역 설정';
+            zoneSection.appendChild(zoneTitle);
 
-                // 이벤트 직접 연결
-                row.querySelector('.dr-btn').addEventListener('click', function() {
-                    if(confirm('\'' + room + '\' 방을 삭제하시겠습니까?\n(방 안에 있는 물건은 삭제되지 않습니다)')) {
-                        roomArray.splice(index, 1);
-                        saveRooms();
-                        renderRoomManagerList();
-                        renderRoomsContent();
-                    }
-                });
+            const zoneWrap = document.createElement('div');
+            zoneWrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;align-items:center;';
 
-                row.querySelectorAll('.dz-btn').forEach(function(btn) {
-                    btn.addEventListener('click', function() {
-                        var r = btn.getAttribute('data-room');
-                        var zi2 = parseInt(btn.getAttribute('data-zi'));
-                        var zz = loadZones();
-                        if (zz[r]) {
-                            zz[r].splice(zi2, 1);
-                            if (zz[r].length === 0) delete zz[r];
-                            saveZones(zz);
-                        }
-                        renderRoomManagerList();
-                    });
-                });
+            roomZones.forEach((zoneName, zi) => {
+                const chip = document.createElement('span');
+                chip.style.cssText = 'display:inline-flex;align-items:center;gap:4px;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:20px;padding:3px 10px;font-size:0.8rem;color:#6366f1;';
 
-                row.querySelector('.az-btn').addEventListener('click', function() {
-                    var newZone = prompt('\'' + room + '\' 방의 구역 이름을 입력하세요\n(예: A-1, 상단 선반, 왼쪽 칸)');
-                    if (newZone && newZone.trim()) {
-                        var zz = loadZones();
-                        if (!zz[room]) zz[room] = [];
-                        zz[room].push(newZone.trim());
+                const chipText = document.createElement('span');
+                chipText.textContent = zoneName;
+                chipText.style.color = '#6366f1';
+                chip.appendChild(chipText);
+
+                const delZoneBtn = document.createElement('button');
+                delZoneBtn.style.cssText = 'background:none;border:none;color:#ef4444;cursor:pointer;font-size:0.75rem;padding:0 0 0 2px;line-height:1;';
+                delZoneBtn.textContent = 'x';
+                delZoneBtn.addEventListener('click', () => {
+                    const zz = loadZones();
+                    if (zz[room]) {
+                        zz[room].splice(zi, 1);
+                        if (zz[room].length === 0) delete zz[room];
                         saveZones(zz);
-                        renderRoomManagerList();
                     }
+                    renderRoomManagerList();
                 });
+                chip.appendChild(delZoneBtn);
+                zoneWrap.appendChild(chip);
+            });
 
-            })(roomArray[i], i);
-        }
+            const addZoneBtn = document.createElement('button');
+            addZoneBtn.style.cssText = 'background:none;border:1px dashed var(--text-muted);border-radius:20px;padding:3px 10px;font-size:0.78rem;cursor:pointer;color:var(--text-muted);';
+            addZoneBtn.textContent = '+ 추가';
+            addZoneBtn.addEventListener('click', () => {
+                const newZone = prompt(room + ' 방의 구역 이름을 입력하세요 (예: A-1, 상단 선반)');
+                if (newZone && newZone.trim()) {
+                    const zz = loadZones();
+                    if (!zz[room]) zz[room] = [];
+                    zz[room].push(newZone.trim());
+                    saveZones(zz);
+                    renderRoomManagerList();
+                }
+            });
+
+            zoneWrap.appendChild(addZoneBtn);
+            zoneSection.appendChild(zoneWrap);
+            row.appendChild(zoneSection);
+
+            roomManagerList.appendChild(row);
+        });
     }
     
     // View state
