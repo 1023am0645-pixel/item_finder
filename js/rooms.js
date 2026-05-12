@@ -203,10 +203,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // View state
-    let currentViewMode = 'compact'; // compact, detail, flat
+    let currentViewMode = 'compact'; // compact, detail, pick, flat
     let globalIsAllSelected = false;
     let allCheckboxesList = [];
     let searchQuery = '';
+    let pickedRooms = null; // null = 미초기화, Set으로 선택된 방 관리
 
     const globalSearchInput = document.getElementById('globalSearchInput');
     if (globalSearchInput) {
@@ -218,7 +219,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const viewCompactBtn = document.getElementById('viewCompactBtn');
     const viewDetailBtn = document.getElementById('viewDetailBtn');
+    const viewPickBtn = document.getElementById('viewPickBtn');
     const viewFlatBtn = document.getElementById('viewFlatBtn');
+    const pickRoomFilterBar = document.getElementById('pickRoomFilterBar');
     
     const globalSelectAllBtn = document.getElementById('globalSelectAllBtn');
     const globalActionContainer = document.getElementById('globalActionContainer');
@@ -276,9 +279,16 @@ document.addEventListener('DOMContentLoaded', () => {
             viewDetailBtn.style.background = currentViewMode === 'detail' ? activeStyle.bg : inactiveStyle.bg;
             viewDetailBtn.style.color = currentViewMode === 'detail' ? activeStyle.color : inactiveStyle.color;
         }
+        if(viewPickBtn) {
+            viewPickBtn.style.background = currentViewMode === 'pick' ? activeStyle.bg : inactiveStyle.bg;
+            viewPickBtn.style.color = currentViewMode === 'pick' ? activeStyle.color : inactiveStyle.color;
+        }
         if(viewFlatBtn) {
             viewFlatBtn.style.background = currentViewMode === 'flat' ? activeStyle.bg : inactiveStyle.bg;
             viewFlatBtn.style.color = currentViewMode === 'flat' ? activeStyle.color : inactiveStyle.color;
+        }
+        if(pickRoomFilterBar) {
+            pickRoomFilterBar.style.display = currentViewMode === 'pick' ? 'block' : 'none';
         }
 
         if(globalSelectAllBtn) {
@@ -293,7 +303,57 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if(viewCompactBtn) viewCompactBtn.addEventListener('click', () => { currentViewMode = 'compact'; updateViewMode(); });
     if(viewDetailBtn) viewDetailBtn.addEventListener('click', () => { currentViewMode = 'detail'; updateViewMode(); });
+    if(viewPickBtn) viewPickBtn.addEventListener('click', () => {
+        currentViewMode = 'pick';
+        if(pickedRooms === null) pickedRooms = new Set(roomArray);
+        updateViewMode();
+    });
     if(viewFlatBtn) viewFlatBtn.addEventListener('click', () => { currentViewMode = 'flat'; updateViewMode(); });
+
+    function renderPickFilterBar() {
+        if (!pickRoomFilterBar) return;
+        pickRoomFilterBar.innerHTML = '';
+
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = 'display:flex;gap:8px;align-items:center;padding-bottom:4px;';
+
+        // 전체선택/해제 토글
+        const allChecked = roomArray.length > 0 && roomArray.every(r => pickedRooms.has(r));
+        const allBtn = document.createElement('button');
+        allBtn.style.cssText = `display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:20px;border:1px solid ${allChecked ? 'var(--primary-color)' : 'var(--border-color)'};background:${allChecked ? 'var(--primary-color)' : 'var(--bg-color)'};color:${allChecked ? 'white' : 'var(--text-muted)'};font-weight:600;cursor:pointer;font-size:0.83rem;white-space:nowrap;flex-shrink:0;transition:all 0.15s;`;
+        allBtn.textContent = allChecked ? '전체해제' : '전체선택';
+        allBtn.addEventListener('click', () => {
+            if (allChecked) { pickedRooms.clear(); } else { roomArray.forEach(r => pickedRooms.add(r)); }
+            renderPickFilterBar();
+            renderRoomsContent();
+        });
+        wrapper.appendChild(allBtn);
+
+        const divider = document.createElement('div');
+        divider.style.cssText = 'width:1px;height:22px;background:var(--border-color);flex-shrink:0;';
+        wrapper.appendChild(divider);
+
+        roomArray.forEach(room => {
+            const count = savedItems.filter(i => i.room === room).length;
+            const isChecked = pickedRooms.has(room);
+
+            const pill = document.createElement('button');
+            pill.style.cssText = `display:inline-flex;align-items:center;gap:5px;padding:6px 13px;border-radius:20px;border:1px solid ${isChecked ? 'var(--primary-color)' : 'var(--border-color)'};background:${isChecked ? 'rgba(255,140,66,0.12)' : 'var(--bg-color)'};color:${isChecked ? 'var(--primary-color)' : 'var(--text-muted)'};font-weight:${isChecked ? '700' : '500'};cursor:pointer;font-size:0.85rem;white-space:nowrap;flex-shrink:0;transition:all 0.15s;`;
+            const checkSvg = isChecked
+                ? `<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect width="13" height="13" rx="4" fill="var(--primary-color)"/><path d="M3 6.5l2.5 2.5 4.5-4.5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+                : `<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect width="13" height="13" rx="4" stroke="var(--border-color)" stroke-width="1.5"/></svg>`;
+            pill.innerHTML = `${checkSvg}<span>${room}</span><span style="font-size:0.72rem;opacity:0.6;">${count}</span>`;
+
+            pill.addEventListener('click', () => {
+                if (pickedRooms.has(room)) { pickedRooms.delete(room); } else { pickedRooms.add(room); }
+                renderPickFilterBar();
+                renderRoomsContent();
+            });
+            wrapper.appendChild(pill);
+        });
+
+        pickRoomFilterBar.appendChild(wrapper);
+    }
 
     // Collapsed state map (true = closed, false = open)
     let collapsedState = {};
@@ -405,6 +465,114 @@ document.addEventListener('DOMContentLoaded', () => {
             if (renderedCount === 0) {
                 allRoomsContainer.style.display = 'block';
                 allRoomsContainer.innerHTML = '<p style="color:var(--text-muted); padding: 1rem; text-align:center;">검색결과가 없거나 저장된 물건이 없습니다.</p>';
+            }
+
+            if (window.lucide) lucide.createIcons();
+            attachZoomLogic();
+            return;
+        }
+
+        // --- 골라보기 (Pick): 원하는 방만 선택해서 펼쳐보기 ---
+        if (currentViewMode === 'pick') {
+            if (pickedRooms === null) pickedRooms = new Set(roomArray);
+            renderPickFilterBar();
+
+            const selectedRooms = roomArray.filter(r => pickedRooms.has(r));
+
+            if (selectedRooms.length === 0) {
+                allRoomsContainer.style.display = 'block';
+                allRoomsContainer.innerHTML = '<p style="color:var(--text-muted); padding: 2rem; text-align:center;">위에서 보고 싶은 방을 선택해주세요.</p>';
+                if (window.lucide) lucide.createIcons();
+                return;
+            }
+
+            allRoomsContainer.style.display = 'grid';
+            allRoomsContainer.style.gridTemplateColumns = 'repeat(3, 1fr)';
+            allRoomsContainer.style.gap = '1rem';
+
+            selectedRooms.forEach(room => {
+                const roomItems = filteredItems.filter(i => i.room === room);
+
+                const roomCard = document.createElement('div');
+                roomCard.style.background = 'var(--surface-color)';
+                roomCard.style.border = '1px solid var(--border-color)';
+                roomCard.style.borderRadius = '16px';
+                roomCard.style.padding = '1rem 0.8rem';
+                roomCard.style.boxShadow = 'var(--shadow-sm)';
+                roomCard.style.transition = 'all 0.2s';
+                roomCard.id = `room-${room}`;
+
+                let itemListHtml = '';
+                if (roomItems.length > 0) {
+                    itemListHtml = '<div style="margin-top:10px; display:flex; flex-direction:column; gap:4px; text-align:left;">';
+                    roomItems.forEach(item => {
+                        const photoTag = item.photo ? `<img src="${item.photo}" class="item-pic-zoom" style="width:20px;height:20px;object-fit:cover;border-radius:4px;cursor:pointer;border:1px solid var(--border-color);">` : '';
+                        itemListHtml += `
+                            <div style="display:flex; align-items:center; gap:6px; padding:4px 6px; background:var(--bg-color); border-radius:8px; font-size:0.85rem;">
+                                <input type="checkbox" class="item-checkbox" data-id="${item.id}" style="width:16px;height:16px;cursor:pointer;accent-color:var(--primary-color);flex-shrink:0;">
+                                <span style="flex:1; color:var(--text-main); font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.name}</span>
+                                ${photoTag}
+                                <button class="item-delete-btn" data-id="${item.id}" data-name="${item.name}" style="background:none;border:none;color:#ef4444;cursor:pointer;padding:2px;opacity:0.4;transition:opacity 0.2s;flex-shrink:0;" title="삭제">
+                                    <i data-lucide="x" style="width:12px;height:12px;"></i>
+                                </button>
+                            </div>
+                        `;
+                    });
+                    itemListHtml += '</div>';
+                } else {
+                    itemListHtml = '<div style="margin-top:10px; font-size:0.8rem; color:var(--text-muted); text-align:center;">비어있음</div>';
+                }
+
+                roomCard.innerHTML = `
+                    <div style="text-align:center; margin-bottom:4px;">
+                        <div style="font-weight:700; font-size:1rem; color:var(--text-main);">
+                            <i data-lucide="door-closed" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;color:var(--primary-color);"></i>${room}
+                        </div>
+                        <div style="font-size:0.8rem; color:var(--text-muted);">${roomItems.length}개 보관</div>
+                    </div>
+                    ${itemListHtml}
+                `;
+
+                roomCard.addEventListener('mouseover', () => {
+                    roomCard.style.transform = 'translateY(-3px)';
+                    roomCard.style.boxShadow = 'var(--shadow-md)';
+                    roomCard.style.borderColor = 'var(--primary-color)';
+                    roomCard.querySelectorAll('.item-delete-btn').forEach(b => b.style.opacity = '1');
+                });
+                roomCard.addEventListener('mouseout', () => {
+                    roomCard.style.transform = '';
+                    roomCard.style.boxShadow = 'var(--shadow-sm)';
+                    roomCard.style.borderColor = 'var(--border-color)';
+                    roomCard.querySelectorAll('.item-delete-btn').forEach(b => b.style.opacity = '0.4');
+                });
+
+                setTimeout(() => {
+                    roomCard.querySelectorAll('.item-checkbox').forEach(cb => {
+                        allCheckboxesList.push(cb);
+                        cb.addEventListener('change', () => syncGlobalAction());
+                    });
+                    roomCard.querySelectorAll('.item-delete-btn').forEach(delBtn => {
+                        delBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            const id = delBtn.getAttribute('data-id');
+                            const name = delBtn.getAttribute('data-name');
+                            if(confirm(`'${name}' 기록을 삭제하시겠습니까?`)) {
+                                savedItems = savedItems.filter(i => i.id !== id);
+                                localStorage.setItem('itemFinder_data', JSON.stringify(savedItems));
+                                if(window.syncToCloud) syncToCloud();
+                                showToast('물건 기록이 삭제되었습니다.');
+                                renderRoomsContent();
+                            }
+                        });
+                    });
+                }, 0);
+
+                allRoomsContainer.appendChild(roomCard);
+            });
+
+            if (allRoomsContainer.childElementCount === 0) {
+                allRoomsContainer.style.display = 'block';
+                allRoomsContainer.innerHTML = '<p style="color:var(--text-muted); padding: 1rem; text-align:center;">검색결과가 없습니다.</p>';
             }
 
             if (window.lucide) lucide.createIcons();

@@ -52,6 +52,7 @@
             <div style="display: flex; gap: 0.5rem; background: var(--bg-color); padding: 4px; border-radius: 20px; border: 1px solid var(--border-color);">
                 <button id="viewCompactBtn" class="view-toggle-btn active" style="padding: 0.5rem 1rem; border-radius: 16px; border: none; background: var(--primary-color); color: white; font-weight: 600; cursor: pointer; transition: 0.2s; box-shadow: var(--shadow-sm);">모아보기</button>
                 <button id="viewDetailBtn" class="view-toggle-btn" style="padding: 0.5rem 1rem; border-radius: 16px; border: none; background: transparent; color: var(--text-muted); font-weight: 600; cursor: pointer; transition: 0.2s;">펼쳐보기</button>
+                <button id="viewPickBtn" class="view-toggle-btn" style="padding: 0.5rem 1rem; border-radius: 16px; border: none; background: transparent; color: var(--text-muted); font-weight: 600; cursor: pointer; transition: 0.2s;">골라보기</button>
                 <button id="viewFlatBtn" class="view-toggle-btn" style="padding: 0.5rem 1rem; border-radius: 16px; border: none; background: transparent; color: var(--text-muted); font-weight: 600; cursor: pointer; transition: 0.2s;">전체보기</button>
             </div>
         </div>
@@ -72,6 +73,7 @@
                 </span>
                 <button id="btnManageRoomsInRooms" style="background:var(--bg-color);border:1px solid var(--border-color);border-radius:12px;color:var(--text-main);cursor:pointer;display:flex;align-items:center;font-size:0.85rem;font-weight:600;padding:6px 12px;box-shadow:var(--shadow-sm);transition:all 0.2s;"><i data-lucide="folder-plus" style="width:16px;height:16px;margin-right:4px;"></i>방 관리</button>
             </h2>
+            <div id="pickRoomFilterBar" style="display:none; overflow-x:auto; -webkit-overflow-scrolling:touch; padding:0.2rem 0 1rem; scrollbar-width:none;"></div>
             <div id="allRoomsContainer" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; margin-top: 1rem; align-items: start;">
                 <!-- JavaScript will generate room blocks here -->
             </div>
