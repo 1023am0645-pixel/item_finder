@@ -466,6 +466,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const versionText = document.getElementById('settingsVersionText');
         const versionStatus = document.getElementById('settingsVersionStatus');
+        const btnOpenUpdateDetails = document.getElementById('btnOpenUpdateDetails');
         if (versionText) versionText.textContent = `${APP_VERSION} · ${APP_RELEASE_DATE}`;
         if (versionStatus) {
             const isLatest = APP_VERSION === APP_LATEST_VERSION;
@@ -473,6 +474,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 ? '최신버전입니다'
                 : '최신버전으로 업데이트가 필요합니다. 화면을 아래로 길게 당겨 앱 새로고침을 해 주세요';
             versionStatus.style.color = isLatest ? 'var(--text-muted)' : '#ef4444';
+        }
+        if (btnOpenUpdateDetails) {
+            btnOpenUpdateDetails.addEventListener('click', () => openUpdateDetails(false));
         }
     }
 
@@ -543,20 +547,27 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function showLatestUpdatePopup() {
-        const storageKey = 'itemFinder_seen_update_' + APP_VERSION + '_details_20260518';
-        if (localStorage.getItem(storageKey) === 'true') return;
-
+    function openUpdateDetails(markSeenOnClose) {
         const overlay = document.getElementById('updateOverlay');
         const closeBtn = document.getElementById('btnCloseUpdateOverlay');
         if (!overlay || !closeBtn) return;
 
         overlay.style.display = 'flex';
+        const scrollArea = overlay.querySelector('div[style*="overflow-y:auto"]');
+        if (scrollArea) scrollArea.scrollTop = 0;
         if (window.lucide) lucide.createIcons();
-        closeBtn.addEventListener('click', () => {
-            localStorage.setItem(storageKey, 'true');
+        closeBtn.onclick = () => {
+            if (markSeenOnClose) {
+                localStorage.setItem('itemFinder_seen_update_' + APP_VERSION + '_details_20260518', 'true');
+            }
             overlay.style.display = 'none';
-        }, { once: true });
+        };
+    }
+
+    function showLatestUpdatePopup() {
+        const storageKey = 'itemFinder_seen_update_' + APP_VERSION + '_details_20260518';
+        if (localStorage.getItem(storageKey) === 'true') return;
+        openUpdateDetails(true);
     }
 
     function promptAddRoom() {
