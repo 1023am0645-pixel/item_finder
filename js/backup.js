@@ -21,6 +21,80 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const backupContainer = document.getElementById('backupContainer');
+    const btnExportLocalBackup = document.getElementById('btnExportLocalBackup');
+    const btnImportLocalBackup = document.getElementById('btnImportLocalBackup');
+    const localBackupFileInput = document.getElementById('localBackupFileInput');
+
+    function buildLocalBackupPayload() {
+        return {
+            app: 'item_finder',
+            version: 1,
+            exportedAt: new Date().toISOString(),
+            data: JSON.parse(localStorage.getItem('itemFinder_data') || '[]'),
+            rooms: JSON.parse(localStorage.getItem('itemFinder_rooms') || '[]'),
+            zones: JSON.parse(localStorage.getItem('itemFinder_zones') || '{}'),
+            backups: JSON.parse(localStorage.getItem('itemFinder_backups') || '[]'),
+            theme: localStorage.getItem('itemFinder_theme') || 'light',
+            nickname: localStorage.getItem('kc_nickname') || ''
+        };
+    }
+
+    function downloadJson(filename, payload) {
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+    }
+
+    function exportLocalBackup() {
+        const payload = buildLocalBackupPayload();
+        const d = new Date();
+        const stamp = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}_${String(d.getHours()).padStart(2, '0')}${String(d.getMinutes()).padStart(2, '0')}`;
+        downloadJson(`item_finder_backup_${stamp}.json`, payload);
+        showToast('로컬 백업 파일을 내보냈습니다.');
+    }
+
+    async function importLocalBackupFile(file) {
+        try {
+            const text = await file.text();
+            const payload = JSON.parse(text);
+            if (payload.app !== 'item_finder' || !Array.isArray(payload.data)) {
+                alert('물건어디 백업 파일이 아니거나 형식이 올바르지 않습니다.');
+                return;
+            }
+            const itemCount = payload.data.length;
+            if (!confirm(`백업 파일의 데이터로 복원하시겠습니까?\n물건 ${itemCount}개와 방/구역 정보가 현재 기기에 적용됩니다.`)) return;
+
+            localStorage.setItem('itemFinder_data', JSON.stringify(payload.data || []));
+            localStorage.setItem('itemFinder_rooms', JSON.stringify(Array.isArray(payload.rooms) ? payload.rooms : []));
+            localStorage.setItem('itemFinder_zones', JSON.stringify(payload.zones && typeof payload.zones === 'object' ? payload.zones : {}));
+            if (Array.isArray(payload.backups)) localStorage.setItem('itemFinder_backups', JSON.stringify(payload.backups));
+            if (payload.theme) localStorage.setItem('itemFinder_theme', payload.theme);
+            if (payload.nickname) localStorage.setItem('kc_nickname', payload.nickname);
+            if (window.syncToCloud) await window.syncToCloud().catch(() => {});
+
+            showToast('로컬 백업 파일을 복원했습니다.');
+            setTimeout(() => window.location.reload(), 700);
+        } catch (e) {
+            alert('백업 파일을 읽지 못했습니다. JSON 파일인지 확인해주세요.');
+        } finally {
+            if (localBackupFileInput) localBackupFileInput.value = '';
+        }
+    }
+
+    if (btnExportLocalBackup) btnExportLocalBackup.addEventListener('click', exportLocalBackup);
+    if (btnImportLocalBackup && localBackupFileInput) {
+        btnImportLocalBackup.addEventListener('click', () => localBackupFileInput.click());
+        localBackupFileInput.addEventListener('change', () => {
+            const file = localBackupFileInput.files && localBackupFileInput.files[0];
+            if (file) importLocalBackupFile(file);
+        });
+    }
     
     function renderBackups() {
         let backups = JSON.parse(localStorage.getItem('itemFinder_backups')) || [];

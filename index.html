@@ -176,6 +176,15 @@
             
             <div style="margin-bottom:1.5rem;">
                 <h3 style="font-size:0.9rem;color:var(--text-muted);margin-bottom:0.5rem;">2. 백업/복원 기록</h3>
+                <div style="display:flex;gap:0.5rem;margin-bottom:0.5rem;">
+                    <button id="btnExportLocalBackupSettings" style="flex:1;background:var(--primary-color);color:white;border:none;padding:0.65rem;border-radius:10px;font-weight:700;cursor:pointer;font-size:0.82rem;display:flex;align-items:center;justify-content:center;gap:5px;">
+                        <i data-lucide="download" style="width:15px;height:15px;"></i>내보내기
+                    </button>
+                    <button id="btnImportLocalBackupSettings" style="flex:1;background:var(--surface-color);color:var(--text-main);border:1px solid var(--border-color);padding:0.65rem;border-radius:10px;font-weight:700;cursor:pointer;font-size:0.82rem;display:flex;align-items:center;justify-content:center;gap:5px;">
+                        <i data-lucide="upload" style="width:15px;height:15px;"></i>가져오기
+                    </button>
+                    <input type="file" id="localBackupFileInputSettings" accept="application/json,.json" style="display:none;">
+                </div>
                 <div id="settingsBackupList" style="display:flex;flex-direction:column;gap:5px;max-height:150px;overflow-y:auto;background:var(--bg-color);padding:0.5rem;border-radius:12px;border:1px solid var(--border-color);margin-bottom:0.5rem;">
                 </div>
             </div>
@@ -199,6 +208,27 @@
         </div>
     </div>
 
+    <!-- Latest Update Overlay -->
+    <div id="updateOverlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,23,42,0.48);backdrop-filter:blur(5px);z-index:8500;display:none;align-items:center;justify-content:center;padding:1rem;">
+        <div style="width:100%;max-width:380px;background:var(--surface-color);border:1px solid var(--border-color);border-radius:18px;box-shadow:var(--shadow-lg);padding:1.5rem;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:1rem;">
+                <div style="width:38px;height:38px;border-radius:12px;background:rgba(255,140,66,0.12);color:var(--primary-color);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <i data-lucide="sparkles" style="width:20px;height:20px;"></i>
+                </div>
+                <div>
+                    <h2 style="font-size:1.15rem;margin:0;color:var(--text-main);">업데이트 안내</h2>
+                    <p style="font-size:0.78rem;margin:3px 0 0;color:var(--text-muted);">v15</p>
+                </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:0.55rem;color:var(--text-main);font-size:0.92rem;line-height:1.45;margin-bottom:1.2rem;">
+                <div>• 로컬 백업 파일 내보내기/가져오기 추가</div>
+                <div>• 백업 파일에 물건, 방, 구역, 테마 정보 포함</div>
+                <div>• 앱 접속 시 최신 업데이트 안내 표시</div>
+            </div>
+            <button id="btnCloseUpdateOverlay" style="width:100%;background:var(--primary-color);color:white;border:none;border-radius:12px;padding:0.8rem;font-weight:800;cursor:pointer;">확인</button>
+        </div>
+    </div>
+
     <script>
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js')
@@ -211,7 +241,7 @@
             <i data-lucide="chevron-right" style="width:28px; height:28px;"></i>
         </button>
     </div>
-    <script src="js/firebase-sync.js?v=14"></script>
-    <script src="js/script.js?v=14"></script>
+    <script src="js/firebase-sync.js?v=15"></script>
+    <script src="js/script.js?v=15"></script>
 </body>
 </html>
