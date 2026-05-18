@@ -1,4 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
+    const APP_VERSION = 'v15';
+    const APP_RELEASE_DATE = '2026.05.18.';
+    const APP_LATEST_VERSION = 'v15';
+
     // Kakao Auth Initialization & Login Gate
     if (window.Kakao && !window.Kakao.isInitialized()) {
         window.Kakao.init('aba8aed2de3168350dd5fdf66f95820c');
@@ -437,6 +441,41 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    function setupManualAndVersionInfo() {
+        const manualBtn = document.getElementById('btnToggleManual');
+        const manualPanel = document.getElementById('appManualPanel');
+        const manualLabel = document.getElementById('manualToggleLabel');
+        const manualIcon = document.getElementById('manualToggleIcon');
+        if (manualBtn && manualPanel) {
+            manualBtn.addEventListener('click', () => {
+                const isOpen = manualPanel.style.display === 'block';
+                manualPanel.style.display = isOpen ? 'none' : 'block';
+                if (manualLabel) {
+                    manualLabel.innerHTML = isOpen
+                        ? '<i data-lucide="book-open" style="width:16px;height:16px;vertical-align:-3px;margin-right:5px;"></i>사용설명서 보기'
+                        : '<i data-lucide="book-open" style="width:16px;height:16px;vertical-align:-3px;margin-right:5px;"></i>사용설명서 접기';
+                }
+                if (manualIcon) {
+                    manualIcon.innerHTML = isOpen
+                        ? '<i data-lucide="chevron-down" style="width:16px;height:16px;"></i>'
+                        : '<i data-lucide="chevron-up" style="width:16px;height:16px;"></i>';
+                }
+                if (window.lucide) lucide.createIcons();
+            });
+        }
+
+        const versionText = document.getElementById('settingsVersionText');
+        const versionStatus = document.getElementById('settingsVersionStatus');
+        if (versionText) versionText.textContent = `${APP_VERSION} · ${APP_RELEASE_DATE}`;
+        if (versionStatus) {
+            const isLatest = APP_VERSION === APP_LATEST_VERSION;
+            versionStatus.textContent = isLatest
+                ? '최신버전입니다'
+                : '최신버전으로 업데이트가 필요합니다. 화면을 아래로 길게 당겨 앱 새로고침을 해 주세요';
+            versionStatus.style.color = isLatest ? 'var(--text-muted)' : '#ef4444';
+        }
+    }
+
     function buildLocalBackupPayload() {
         return {
             app: 'item_finder',
@@ -505,8 +544,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showLatestUpdatePopup() {
-        const updateVersion = 'v15';
-        const storageKey = 'itemFinder_seen_update_' + updateVersion;
+        const storageKey = 'itemFinder_seen_update_' + APP_VERSION + '_details_20260518';
         if (localStorage.getItem(storageKey) === 'true') return;
 
         const overlay = document.getElementById('updateOverlay');
@@ -774,6 +812,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Init
     renderRooms();
+    setupManualAndVersionInfo();
     
     // Init Lucide Icons
     if (window.lucide) {
