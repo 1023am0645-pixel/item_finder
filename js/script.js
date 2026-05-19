@@ -1,6 +1,15 @@
 document.addEventListener('DOMContentLoaded', () => {
     const APP_UPDATE_HISTORY = [
         {
+            version: 'v22',
+            date: '2026.05.19.',
+            items: [
+                '2페이지 우측 상단에 설정 버튼 추가',
+                '앱 사용설명서를 항목별 펼쳐보기 방식으로 개선',
+                '앱 설치방법 안내와 설치 아이콘 표시 추가'
+            ]
+        },
+        {
             version: 'v21',
             date: '2026.05.19.',
             items: [
@@ -393,14 +402,20 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    if (btnOpenSettings) {
-        btnOpenSettings.addEventListener('click', () => {
+    function openSettingsOverlay() {
+        if (!settingsOverlay) return;
             renderBackupList();
             settingsOverlay.style.display = 'flex';
             if(window.lucide) lucide.createIcons();
-        });
+    }
+
+    if (btnOpenSettings) {
+        btnOpenSettings.addEventListener('click', openSettingsOverlay);
         btnCloseSettings.addEventListener('click', () => {
             settingsOverlay.style.display = 'none';
+            if (window.location.hash === '#settings') {
+                history.replaceState(null, '', window.location.pathname + window.location.search);
+            }
         });
         btnEditNickname.addEventListener('click', () => {
             let nick = prompt('새로운 닉네임을 입력해주세요:', localStorage.getItem('kc_nickname') || '');
@@ -454,6 +469,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         }
+    }
+
+    if (window.location.hash === '#settings') {
+        setTimeout(openSettingsOverlay, 250);
     }
 
     // Theme logic
@@ -628,6 +647,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (window.lucide) lucide.createIcons();
             });
         }
+        document.querySelectorAll('.manual-topic-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const content = btn.nextElementSibling;
+                if (!content || !content.classList.contains('manual-topic-content')) return;
+                const isOpen = content.style.display === 'block';
+                content.style.display = isOpen ? 'none' : 'block';
+                const icon = btn.querySelector('i[data-lucide]');
+                if (icon) icon.setAttribute('data-lucide', isOpen ? 'chevron-down' : 'chevron-up');
+                if (window.lucide) lucide.createIcons();
+            });
+        });
 
         const versionText = document.getElementById('settingsVersionText');
         const versionStatus = document.getElementById('settingsVersionStatus');
