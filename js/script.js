@@ -1,7 +1,130 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const APP_VERSION = 'v15';
-    const APP_RELEASE_DATE = '2026.05.18.';
-    const APP_LATEST_VERSION = 'v15';
+    const APP_UPDATE_HISTORY = [
+        {
+            version: 'v20',
+            date: '2026.05.19.',
+            items: [
+                '배포 버전을 자동으로 읽어 업데이트 팝업과 설정 버전 표시 반영',
+                '새 배포 시 업데이트 팝업이 자동으로 다시 표시되도록 개선',
+                '업데이트 내역 보기에서도 최신 배포 버전이 자동으로 표시되도록 수정'
+            ]
+        },
+        {
+            version: 'v18',
+            date: '2026.05.19.',
+            items: [
+                '모바일 2페이지 보기 메뉴 줄바꿈 개선',
+                '좁은 화면에서는 모아/보기, 펼쳐/보기처럼 자연스럽게 표시',
+                '넓은 화면과 가로보기에서는 기존처럼 한 줄 표시 유지'
+            ]
+        },
+        {
+            version: 'v17',
+            date: '2026.05.18.',
+            items: [
+                '설정에서 업데이트 내역 다시보기 추가',
+                '이탈리아/스위스 테마에서도 업데이트 화면 가독성 개선',
+                '업데이트 화면을 불투명 배경과 고정 글자색으로 안정화'
+            ]
+        },
+        {
+            version: 'v16',
+            date: '2026.05.18.',
+            items: [
+                '업데이트 상세 팝업을 Play스토어식 스크롤 화면으로 개선',
+                '앱 설정에 사용설명서 추가',
+                '설정 하단에 현재 버전과 최신 버전 상태 표시'
+            ]
+        },
+        {
+            version: 'v15',
+            date: '2026.05.18.',
+            items: [
+                '로컬 백업 파일 내보내기/가져오기 추가',
+                '백업 파일에 물건, 방, 구역, 테마 정보 포함',
+                '앱 접속 시 최신 업데이트 안내 표시'
+            ]
+        },
+        {
+            version: 'v14',
+            date: '2026.05.18.',
+            items: [
+                '구역 정보 즉시 클라우드 동기화',
+                '닉네임 재로그인 자동 복원',
+                '백업 생성/복원에 구역과 방 정보 포함'
+            ]
+        },
+        {
+            version: 'v13',
+            date: '2026.05.18.',
+            items: [
+                '구역 데이터 백업/복원 및 클라우드 싱크 포함',
+                '백업 센터 복원 시 구역 정보 함께 복원'
+            ]
+        },
+        {
+            version: 'v12',
+            date: '2026.05.18.',
+            items: [
+                '방 관리 목록 렌더링 안정화',
+                '서비스워커 캐시 갱신 안정화'
+            ]
+        },
+        {
+            version: 'v11',
+            date: '2026.05.18.',
+            items: [
+                '방 관리 화면 캐시 갱신',
+                '모바일/웹 최신 스크립트 강제 로드 처리'
+            ]
+        },
+        {
+            version: 'v10',
+            date: '2026.05.18.',
+            items: [
+                '방 관리 목록 표시 오류 수정',
+                '모바일 2열 레이아웃 및 가로보기 모드 지원'
+            ]
+        },
+        {
+            version: 'v9',
+            date: '2026.05.18.',
+            items: [
+                '골라보기 탭 추가',
+                '방별 구역 설정과 구역 배지 표시 추가'
+            ]
+        }
+    ];
+
+    function getDeployedAppVersion() {
+        const scriptTag = document.querySelector('script[src*="js/script.js"]');
+        if (!scriptTag) return APP_UPDATE_HISTORY[0].version;
+        try {
+            const url = new URL(scriptTag.getAttribute('src'), window.location.href);
+            const version = url.searchParams.get('v');
+            return version ? `v${version}` : APP_UPDATE_HISTORY[0].version;
+        } catch(e) {
+            return APP_UPDATE_HISTORY[0].version;
+        }
+    }
+
+    function getTodayText() {
+        const d = new Date();
+        return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}.`;
+    }
+
+    const APP_VERSION = getDeployedAppVersion();
+    const APP_LATEST_VERSION = APP_VERSION;
+    const currentUpdate = APP_UPDATE_HISTORY.find(update => update.version === APP_VERSION) || {
+        version: APP_VERSION,
+        date: getTodayText(),
+        items: [
+            '새 버전 배포가 적용되었습니다.',
+            '최신 파일과 화면 구성이 반영되었습니다.',
+            '자세한 변경사항은 다음 업데이트 내역에 정리됩니다.'
+        ]
+    };
+    const APP_RELEASE_DATE = currentUpdate.date;
 
     // Kakao Auth Initialization & Login Gate
     if (window.Kakao && !window.Kakao.isInitialized()) {
@@ -480,6 +603,27 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function renderUpdateHistory() {
+        const latestMeta = document.getElementById('latestUpdateMeta');
+        const latestItems = document.getElementById('latestUpdateItems');
+        const previousList = document.getElementById('previousUpdateList');
+        if (latestMeta) latestMeta.textContent = `${currentUpdate.version} · ${currentUpdate.date}`;
+        if (latestItems) {
+            latestItems.innerHTML = currentUpdate.items
+                .map((item, index) => `<p style="margin:0${index === currentUpdate.items.length - 1 ? '' : ' 0 0.55rem'};">• ${item}</p>`)
+                .join('');
+        }
+        if (previousList) {
+            const previousUpdates = APP_UPDATE_HISTORY.filter(update => update.version !== currentUpdate.version);
+            previousList.innerHTML = previousUpdates.map(update => `
+                <div>
+                    <p style="margin:0 0 0.35rem;font-weight:800;">${update.version} · ${update.date}</p>
+                    <p style="margin:0;color:#5f6368;">${update.items.map(item => `• ${item}`).join('<br>')}</p>
+                </div>
+            `).join('');
+        }
+    }
+
     function buildLocalBackupPayload() {
         return {
             app: 'item_finder',
@@ -558,14 +702,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (window.lucide) lucide.createIcons();
         closeBtn.onclick = () => {
             if (markSeenOnClose) {
-                localStorage.setItem('itemFinder_seen_update_' + APP_VERSION + '_details_20260518', 'true');
+                localStorage.setItem('itemFinder_seen_update_' + APP_VERSION, 'true');
             }
             overlay.style.display = 'none';
         };
     }
 
     function showLatestUpdatePopup() {
-        const storageKey = 'itemFinder_seen_update_' + APP_VERSION + '_details_20260518';
+        const storageKey = 'itemFinder_seen_update_' + APP_VERSION;
         if (localStorage.getItem(storageKey) === 'true') return;
         openUpdateDetails(true);
     }
@@ -824,6 +968,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Init
     renderRooms();
     setupManualAndVersionInfo();
+    renderUpdateHistory();
     
     // Init Lucide Icons
     if (window.lucide) {
