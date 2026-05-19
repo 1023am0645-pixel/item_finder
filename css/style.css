@@ -463,6 +463,36 @@ header {
   .form-row {
     flex-direction: column;
   }
+  .view-toggle-group {
+    width: 100%;
+    gap: 0.25rem !important;
+    border-radius: 16px !important;
+  }
+  .view-toggle-btn {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 0.45rem 0.35rem !important;
+    font-size: 0.82rem;
+    line-height: 1.15;
+  }
+  .view-toggle-btn .view-label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+    word-break: keep-all;
+  }
+}
+
+@media (max-width: 390px) {
+  .view-toggle-btn {
+    font-size: 0.78rem;
+  }
+  .view-toggle-btn .view-label {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
 }
 
 /* 모바일 가로 모드 */
@@ -482,5 +512,10 @@ header {
   }
   #pickRoomFilterBar {
     padding: 0.1rem 0 0.6rem;
+  }
+  .view-toggle-btn .view-label {
+    display: inline-flex;
+    flex-direction: row;
+    white-space: nowrap;
   }
 }
