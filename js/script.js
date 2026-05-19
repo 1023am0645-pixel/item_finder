@@ -1,12 +1,30 @@
 document.addEventListener('DOMContentLoaded', () => {
     const APP_UPDATE_HISTORY = [
         {
+            version: 'v21',
+            date: '2026.05.19.',
+            items: [
+                '최신버전 여부를 앱 접속 시 자동 확인',
+                '최신버전이 아닐 때 업데이트 안내 팝업 표시',
+                '업데이트 버튼으로 앱 새로고침 실행'
+            ]
+        },
+        {
             version: 'v20',
             date: '2026.05.19.',
             items: [
                 '배포 버전을 자동으로 읽어 업데이트 팝업과 설정 버전 표시 반영',
                 '새 배포 시 업데이트 팝업이 자동으로 다시 표시되도록 개선',
                 '업데이트 내역 보기에서도 최신 배포 버전이 자동으로 표시되도록 수정'
+            ]
+        },
+        {
+            version: 'v19',
+            date: '2026.05.19.',
+            items: [
+                '모바일 보기 메뉴 수정사항이 업데이트 팝업에 표시되지 않던 문제 수정',
+                '앱 설정의 업데이트 내역에서 최신 변경사항을 확인할 수 있도록 보정',
+                '배포 캐시 버전과 앱 표시 버전이 어긋나던 문제 점검'
             ]
         },
         {
@@ -114,7 +132,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const APP_VERSION = getDeployedAppVersion();
-    const APP_LATEST_VERSION = APP_VERSION;
+    let appLatestVersion = APP_VERSION;
+    let appLatestDate = '';
     const currentUpdate = APP_UPDATE_HISTORY.find(update => update.version === APP_VERSION) || {
         version: APP_VERSION,
         date: getTodayText(),
@@ -125,6 +144,29 @@ document.addEventListener('DOMContentLoaded', () => {
         ]
     };
     const APP_RELEASE_DATE = currentUpdate.date;
+
+    function getVersionNumber(version) {
+        return parseInt(String(version || '').replace(/[^0-9]/g, ''), 10) || 0;
+    }
+
+    async function fetchLatestVersionInfo() {
+        try {
+            const res = await fetch(`version.json?ts=${Date.now()}`, { cache: 'no-store' });
+            if (!res.ok) return null;
+            const info = await res.json();
+            if (info && info.version) {
+                appLatestVersion = info.version;
+                appLatestDate = info.date || '';
+                updateVersionStatus();
+                return info;
+            }
+        } catch(e) {}
+        return null;
+    }
+
+    function isCurrentVersionLatest() {
+        return getVersionNumber(APP_VERSION) >= getVersionNumber(appLatestVersion);
+    }
 
     // Kakao Auth Initialization & Login Gate
     if (window.Kakao && !window.Kakao.isInitialized()) {
@@ -139,7 +181,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (isKakaoLoggedIn && loginOverlay) {
         loginOverlay.style.display = 'none';
         updateAppTitle();
-        setTimeout(showLatestUpdatePopup, 300);
+        setTimeout(checkVersionAndShowStartupPopup, 300);
     }
 
     if (btnKakaoLogin) {
@@ -218,7 +260,7 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => {
                 loginOverlay.style.display = 'none';
                 showToast(`환영합니다, ${finalNick}님!`);
-                showLatestUpdatePopup();
+                checkVersionAndShowStartupPopup();
             }, 400);
             if (window.updateNicknameInCloud) window.updateNicknameInCloud(finalNick).catch(() => {});
             if (window.syncToCloud) window.syncToCloud().catch(() => {});
@@ -591,16 +633,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const versionStatus = document.getElementById('settingsVersionStatus');
         const btnOpenUpdateDetails = document.getElementById('btnOpenUpdateDetails');
         if (versionText) versionText.textContent = `${APP_VERSION} · ${APP_RELEASE_DATE}`;
-        if (versionStatus) {
-            const isLatest = APP_VERSION === APP_LATEST_VERSION;
-            versionStatus.textContent = isLatest
-                ? '최신버전입니다'
-                : '최신버전으로 업데이트가 필요합니다. 화면을 아래로 길게 당겨 앱 새로고침을 해 주세요';
-            versionStatus.style.color = isLatest ? 'var(--text-muted)' : '#ef4444';
-        }
+        updateVersionStatus();
         if (btnOpenUpdateDetails) {
             btnOpenUpdateDetails.addEventListener('click', () => openUpdateDetails(false));
         }
+    }
+
+    function updateVersionStatus() {
+        const versionStatus = document.getElementById('settingsVersionStatus');
+        if (!versionStatus) return;
+        const isLatest = isCurrentVersionLatest();
+        versionStatus.textContent = isLatest
+            ? '최신버전입니다'
+            : `최신버전(${appLatestVersion}${appLatestDate ? ' · ' + appLatestDate : ''})으로 업데이트가 필요합니다. 화면을 아래로 길게 당겨 앱 새로고침을 해 주세요`;
+        versionStatus.style.color = isLatest ? 'var(--text-muted)' : '#ef4444';
     }
 
     function renderUpdateHistory() {
@@ -712,6 +758,61 @@ document.addEventListener('DOMContentLoaded', () => {
         const storageKey = 'itemFinder_seen_update_' + APP_VERSION;
         if (localStorage.getItem(storageKey) === 'true') return;
         openUpdateDetails(true);
+    }
+
+    function showOutdatedVersionPopup(latestInfo) {
+        let overlay = document.getElementById('outdatedVersionOverlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'outdatedVersionOverlay';
+            overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,23,42,0.52);z-index:9700;display:none;align-items:center;justify-content:center;padding:1rem;';
+            overlay.innerHTML = `
+                <div style="width:100%;max-width:360px;background:#ffffff;color:#202124;border-radius:18px;padding:1.4rem;box-shadow:0 20px 40px rgba(15,23,42,0.22);">
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:0.9rem;">
+                        <div style="width:38px;height:38px;border-radius:12px;background:rgba(255,140,66,0.12);color:#ff8c42;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <i data-lucide="refresh-cw" style="width:20px;height:20px;"></i>
+                        </div>
+                        <div>
+                            <h2 style="margin:0;font-size:1.1rem;font-weight:800;color:#202124;">최신버전이 아닙니다</h2>
+                            <p id="outdatedVersionMeta" style="margin:3px 0 0;color:#5f6368;font-size:0.78rem;"></p>
+                        </div>
+                    </div>
+                    <p style="margin:0 0 1.2rem;color:#3c4043;font-size:0.94rem;line-height:1.55;">최신버전이 아닙니다. 업데이트 해 주세요.</p>
+                    <button id="btnReloadForUpdate" style="width:100%;background:#ff8c42;color:white;border:none;border-radius:12px;padding:0.82rem;font-weight:800;cursor:pointer;font-size:0.95rem;">업데이트</button>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+        }
+
+        const meta = document.getElementById('outdatedVersionMeta');
+        if (meta) {
+            meta.textContent = `현재 ${APP_VERSION} · 최신 ${latestInfo.version}${latestInfo.date ? ' · ' + latestInfo.date : ''}`;
+        }
+        const btnReload = document.getElementById('btnReloadForUpdate');
+        if (btnReload) {
+            btnReload.onclick = async () => {
+                btnReload.disabled = true;
+                btnReload.textContent = '업데이트 중...';
+                try {
+                    if ('serviceWorker' in navigator) {
+                        const registrations = await navigator.serviceWorker.getRegistrations();
+                        await Promise.all(registrations.map(reg => reg.update().catch(() => {})));
+                    }
+                } catch(e) {}
+                window.location.reload();
+            };
+        }
+        overlay.style.display = 'flex';
+        if (window.lucide) lucide.createIcons();
+    }
+
+    async function checkVersionAndShowStartupPopup() {
+        const latestInfo = await fetchLatestVersionInfo();
+        if (latestInfo && getVersionNumber(latestInfo.version) > getVersionNumber(APP_VERSION)) {
+            showOutdatedVersionPopup(latestInfo);
+            return;
+        }
+        showLatestUpdatePopup();
     }
 
     function promptAddRoom() {
