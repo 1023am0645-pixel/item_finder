@@ -14,7 +14,7 @@
     <!-- Android PWA 설명 -->
     <meta name="description" content="우리집 물건 위치를 저장하고 찾아주는 홈 인벤토리 앱">
     <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;800;900&family=Nanum+Pen+Script&family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=22">
+    <link rel="stylesheet" href="css/style.css?v=23">
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://t1.kakaocdn.net/kakao_js_sdk/1.43.1/kakao.min.js"></script>
     <script>
@@ -29,7 +29,7 @@
     <!-- 카카오톡 로그인 오버레이 -->
     <div id="loginOverlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:var(--surface-color);backdrop-filter:blur(10px);z-index:9999;display:flex;flex-direction:column;justify-content:center;align-items:center;transition:all 0.5s ease;">
         <img src="assets/hero.png" alt="mascot" style="width: 280px; height: 280px; object-fit: contain; margin-bottom: 2rem; border-radius: 24px; box-shadow: var(--shadow-lg);">
-        <h1 class="app-main-title logo" style="color:var(--text-main);font-size:3rem;margin-bottom:0.2rem; font-family:'Nanum Pen Script', cursive;">물건어디<span style="color:#ff8c42;margin-left:4px; font-weight:900; font-size:1.2em;">?</span></h1>
+        <h1 class="app-main-title logo" style="font-size:3rem;margin-bottom:0.2rem;">물건어디<span class="q-mark">?</span></h1>
         <p style="color:var(--text-muted);font-weight:500;margin-bottom:2.5rem;font-size:0.9rem;text-align:center;">우리집 물건 위치 저장하기</p>
         <div id="nicknameInputStep" style="display:none; flex-direction:column; align-items:center; width:80%; max-width:300px;">
             <input type="text" id="loginNickname" placeholder="사용할 닉네임을 입력해주세요" style="width:100%; padding:14px; border-radius:12px; border:2px solid #FEE500; margin-bottom:1rem; font-size:1rem; outline:none; text-align:center;">
@@ -46,11 +46,8 @@
         <!-- 상단 타이틀 -->
         <header>
             <div class="header-top" style="position: relative; justify-content: center; height: 40px; display: flex; align-items: center;">
-                <h1 class="logo app-main-title" style="font-family:'Nanum Pen Script', cursive; font-size:2.5rem;">물건어디<span class="q-mark" style="color: #ff8c42;">?</span></h1>
+                <h1 class="logo app-main-title" style="font-size:2.4rem;">물건어디<span class="q-mark">?</span></h1>
                 <div style="position: absolute; right: 0; display:flex; align-items:center; gap:0.8rem; top: 0;">
-                    <button id="btnShareApp" class="floating-action-btn" style="width:40px; height:40px; background:var(--surface-color); border:1px solid var(--border-color); border-radius:50%; display:flex; justify-content:center; align-items:center; cursor:pointer; color:var(--text-main); box-shadow:var(--shadow-sm);" title="공유하기">
-                        <i data-lucide="share-2" style="width:18px;height:18px;"></i>
-                    </button>
                     <button id="btnOpenSettings" class="floating-action-btn" style="width:40px; height:40px; background:var(--surface-color); border:1px solid var(--border-color); border-radius:50%; display:flex; justify-content:center; align-items:center; cursor:pointer; color:var(--text-main); box-shadow:var(--shadow-sm);" title="설정">
                         <i data-lucide="settings" style="width:18px;height:18px;"></i>
                     </button>
@@ -147,35 +144,38 @@
 
     <!-- Settings Overlay -->
     <div id="settingsOverlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);backdrop-filter:blur(5px);z-index:9000;display:none;align-items:center;justify-content:center;">
-        <div style="background:var(--surface-color);width:90%;max-width:400px;max-height:90vh;overflow-y:auto;border-radius:20px;padding:2rem;box-shadow:var(--shadow-xl);position:relative;">
+        <div style="background:var(--surface-color);width:90%;max-width:400px;max-height:90vh;overflow-y:auto;border-radius:20px;padding:2rem;box-shadow:var(--shadow-xl);position:relative;display:flex;flex-direction:column;">
             <button id="btnCloseSettings" style="position:absolute;top:15px;right:15px;background:transparent;border:none;cursor:pointer;color:var(--text-main);"><i data-lucide="x"></i></button>
             <h2 style="margin-bottom:1.5rem;font-size:1.3rem;">앱 설정</h2>
             
-            <div style="margin-bottom:1.5rem;">
+            <div id="settingsAccountSection" style="margin-bottom:1.5rem;order:1;">
                 <h3 style="font-size:0.9rem;color:var(--text-muted);margin-bottom:0.5rem;">1. 계정 관리</h3>
                 <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg-color);padding:0.8rem;border-radius:12px;margin-bottom:0.5rem;border:1px solid var(--border-color);">
                     <span style="font-weight:600; font-size:0.9rem;"><i data-lucide="user" style="width:16px;height:16px;vertical-align:-3px;margin-right:5px;"></i><span id="settingsNicknameDisplay">회원</span></span>
-                    <button id="btnEditNickname" style="background:var(--primary-color);color:white;border:none;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:0.8rem;">수정</button>
+                    <button id="btnToggleAccountActions" style="background:var(--surface-color);color:var(--text-main);border:1px solid var(--border-color);padding:6px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;" title="계정 설정">
+                        <i data-lucide="settings" style="width:16px;height:16px;"></i>
+                    </button>
                 </div>
-                <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
-                    <button id="btnKakaoSwitchAccount" style="flex:1;background:var(--bg-color);color:var(--text-main);border:1px solid var(--border-color);padding:0.7rem;border-radius:12px;font-weight:600;cursor:pointer;text-align:center;font-size:0.85rem;transition:opacity 0.2s;">
+                <div id="accountActionList" style="display:none;flex-direction:column;gap:0.45rem;margin-top:0.5rem;">
+                    <button id="btnEditNickname" style="width:100%;background:var(--bg-color);color:var(--text-main);border:1px solid var(--border-color);padding:0.7rem;border-radius:12px;font-weight:600;cursor:pointer;text-align:left;font-size:0.85rem;">닉네임 수정</button>
+                    <button id="btnInviteFamily" style="width:100%;background:#FEE500;color:#000;border:none;padding:0.7rem;border-radius:12px;font-weight:600;cursor:pointer;font-size:0.85rem;display:flex;align-items:center;justify-content:flex-start;gap:6px;">
+                        <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:#000;"><path d="M12 3c-5.52 0-10 3.58-10 8 0 2.86 1.83 5.37 4.6 6.78-.3.97-1.12 3.65-1.14 3.75-.03.14.05.21.16.2.14-.02 3.86-2.58 5.34-3.6.35.04.7.07 1.04.07 5.52 0 10-3.58 10-8s-4.48-8-10-8z"/></svg>
+                        카카오톡으로 가족 초대하기
+                    </button>
+                    <button id="btnJoinGroup" style="width:100%;background:var(--bg-color);color:var(--text-main);border:1px solid var(--border-color);padding:0.7rem;border-radius:12px;font-weight:600;cursor:pointer;font-size:0.85rem;text-align:left;">
+                        초대 코드로 합류하기
+                    </button>
+                    <button id="btnKakaoSwitchAccount" style="width:100%;background:var(--bg-color);color:var(--text-main);border:1px solid var(--border-color);padding:0.7rem;border-radius:12px;font-weight:600;cursor:pointer;text-align:left;font-size:0.85rem;transition:opacity 0.2s;">
                         다른 계정으로 로그인
                     </button>
-                    <button id="btnKakaoLogout" style="flex:1;background:var(--bg-color);color:var(--text-muted);border:1px solid var(--border-color);padding:0.7rem;border-radius:12px;font-weight:600;cursor:pointer;text-align:center;font-size:0.85rem;transition:opacity 0.2s;">
+                    <button id="btnKakaoLogout" style="width:100%;background:var(--bg-color);color:var(--text-muted);border:1px solid var(--border-color);padding:0.7rem;border-radius:12px;font-weight:600;cursor:pointer;text-align:left;font-size:0.85rem;transition:opacity 0.2s;">
                         로그아웃
                     </button>
                 </div>
-                <button id="btnInviteFamily" style="width:100%;margin-top:0.5rem;background:#FEE500;color:#000;border:none;padding:0.7rem;border-radius:12px;font-weight:600;cursor:pointer;font-size:0.85rem;display:flex;align-items:center;justify-content:center;gap:6px;">
-                    <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:#000;"><path d="M12 3c-5.52 0-10 3.58-10 8 0 2.86 1.83 5.37 4.6 6.78-.3.97-1.12 3.65-1.14 3.75-.03.14.05.21.16.2.14-.02 3.86-2.58 5.34-3.6.35.04.7.07 1.04.07 5.52 0 10-3.58 10-8s-4.48-8-10-8z"/></svg>
-                    카카오톡으로 가족 초대하기
-                </button>
-                <button id="btnJoinGroup" style="width:100%;margin-top:0.5rem;background:var(--bg-color);color:var(--text-main);border:1px solid var(--border-color);padding:0.7rem;border-radius:12px;font-weight:600;cursor:pointer;font-size:0.85rem;">
-                    초대 코드로 합류하기
-                </button>
             </div>
             
-            <div style="margin-bottom:1.5rem;">
-                <h3 style="font-size:0.9rem;color:var(--text-muted);margin-bottom:0.5rem;">2. 백업/복원 기록</h3>
+            <div id="settingsBackupSection" style="margin-bottom:1.5rem;order:2;">
+                <h3 style="font-size:0.9rem;color:var(--text-muted);margin-bottom:0.5rem;">2. 백업/복원</h3>
                 <div style="display:flex;gap:0.5rem;margin-bottom:0.5rem;">
                     <button id="btnExportLocalBackupSettings" style="flex:1;background:var(--primary-color);color:white;border:none;padding:0.65rem;border-radius:10px;font-weight:700;cursor:pointer;font-size:0.82rem;display:flex;align-items:center;justify-content:center;gap:5px;">
                         <i data-lucide="download" style="width:15px;height:15px;"></i>내보내기
@@ -189,15 +189,15 @@
                 </div>
             </div>
 
-            <div style="margin-bottom:1.5rem;">
-                <h3 style="font-size:0.9rem;color:var(--text-muted);margin-bottom:0.5rem;">3. 데이터 새로고침</h3>
+            <div id="settingsRefreshSection" style="margin-bottom:1.5rem;order:4;">
+                <h3 style="font-size:0.9rem;color:var(--text-muted);margin-bottom:0.5rem;">4. 데이터 새로고침</h3>
                 <button id="btnSyncRefresh" onclick="(async function(btn){btn.disabled=true;btn.textContent='불러오는 중...';try{if(window.loadFromCloud)await window.loadFromCloud();}catch(e){}window.location.reload();})(this)" style="width:100%;background:var(--bg-color);color:var(--text-main);border:1px solid var(--border-color);padding:0.7rem;border-radius:12px;font-weight:600;cursor:pointer;font-size:0.85rem;display:flex;align-items:center;justify-content:center;gap:8px;">
                     최신 데이터 불러오기
                 </button>
             </div>
 
-            <div style="margin-bottom:1.5rem;">
-                <h3 style="font-size:0.9rem;color:var(--text-muted);margin-bottom:0.5rem;">4. 앱 사용설명서</h3>
+            <div id="settingsManualSection" style="margin-bottom:1.5rem;order:5;">
+                <h3 style="font-size:0.9rem;color:var(--text-muted);margin-bottom:0.5rem;">5. 앱 사용설명서</h3>
                 <button id="btnToggleManual" style="width:100%;background:var(--bg-color);color:var(--text-main);border:1px solid var(--border-color);padding:0.75rem;border-radius:12px;font-weight:700;cursor:pointer;font-size:0.85rem;display:flex;align-items:center;justify-content:space-between;">
                     <span id="manualToggleLabel"><i data-lucide="book-open" style="width:16px;height:16px;vertical-align:-3px;margin-right:5px;"></i>사용설명서 보기</span>
                     <span id="manualToggleIcon" style="display:flex;"><i data-lucide="chevron-down" style="width:16px;height:16px;"></i></span>
@@ -207,37 +207,43 @@
                         <span>1. 물건 추가하기</span><i data-lucide="chevron-down" style="width:15px;height:15px;"></i>
                     </button>
                     <div class="manual-topic-content" style="display:none;margin:-0.1rem 0 0.65rem;padding:0 0.75rem 0.55rem;color:var(--text-muted);">
-                        물건 이름을 입력하고 위치(방)를 선택한 뒤, 필요하면 구역·메모·사진을 추가하고 <b>물건 저장하기</b>를 누릅니다.
+                        물건 이름 입력 &gt; 위치(방) 선택 &gt; 필요 시 구역·메모·사진 추가 &gt; <b>[물건 저장하기]</b> 누르기
                     </div>
                     <button type="button" class="manual-topic-btn" style="width:100%;background:var(--surface-color);color:var(--text-main);border:1px solid var(--border-color);border-radius:10px;padding:0.65rem 0.75rem;margin-bottom:0.45rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:space-between;text-align:left;">
                         <span>2. 저장 목록 확인하기</span><i data-lucide="chevron-down" style="width:15px;height:15px;"></i>
                     </button>
                     <div class="manual-topic-content" style="display:none;margin:-0.1rem 0 0.65rem;padding:0 0.75rem 0.55rem;color:var(--text-muted);">
-                        홈 화면 오른쪽 화살표 또는 방 목록의 <b>전체 목록보기</b>를 눌러 2페이지로 이동합니다. 모아보기·펼쳐보기·골라보기·전체보기로 원하는 방식으로 확인할 수 있습니다.
+                        홈 화면 오른쪽 화살표 또는 <b>[전체 목록보기]</b> 선택 &gt; 2페이지 이동 &gt; 모아보기·펼쳐보기·골라보기·전체보기 중 원하는 보기 선택
                     </div>
                     <button type="button" class="manual-topic-btn" style="width:100%;background:var(--surface-color);color:var(--text-main);border:1px solid var(--border-color);border-radius:10px;padding:0.65rem 0.75rem;margin-bottom:0.45rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:space-between;text-align:left;">
                         <span>3. 방 추가/제거</span><i data-lucide="chevron-down" style="width:15px;height:15px;"></i>
                     </button>
                     <div class="manual-topic-content" style="display:none;margin:-0.1rem 0 0.65rem;padding:0 0.75rem 0.55rem;color:var(--text-muted);">
-                        2페이지의 <b>방 관리</b>에서 방을 추가하거나 제거할 수 있습니다. 각 방 아래의 구역 추가 버튼으로 A-1, 상단 선반 같은 세부 구역도 관리합니다.
+                        2페이지 이동 &gt; <b>[방 관리]</b> 선택 &gt; 새 방 추가 또는 기존 방 삭제 &gt; 각 방 아래에서 A-1, 상단 선반 같은 구역 추가
                     </div>
                     <button type="button" class="manual-topic-btn" style="width:100%;background:var(--surface-color);color:var(--text-main);border:1px solid var(--border-color);border-radius:10px;padding:0.65rem 0.75rem;margin-bottom:0.45rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:space-between;text-align:left;">
                         <span>4. 백업/복원</span><i data-lucide="chevron-down" style="width:15px;height:15px;"></i>
                     </button>
                     <div class="manual-topic-content" style="display:none;margin:-0.1rem 0 0.65rem;padding:0 0.75rem 0.55rem;color:var(--text-muted);">
-                        백업 버튼은 앱 안에 날짜별 복원 지점을 만듭니다. <b>내보내기</b>는 JSON 파일로 저장하고, <b>가져오기</b>는 다른 기기에서 해당 파일을 복원합니다.
+                        백업 버튼 선택 &gt; 날짜별 복원 지점 생성 &gt; 필요 시 <b>[내보내기]</b>로 파일 저장 &gt; 다른 기기에서 <b>[가져오기]</b>로 복원
                     </div>
                     <button type="button" class="manual-topic-btn" style="width:100%;background:var(--surface-color);color:var(--text-main);border:1px solid var(--border-color);border-radius:10px;padding:0.65rem 0.75rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:space-between;text-align:left;">
-                        <span>5. 앱 설치방법</span><i data-lucide="chevron-down" style="width:15px;height:15px;"></i>
+                        <span>5. 가족 초대하기</span><i data-lucide="chevron-down" style="width:15px;height:15px;"></i>
+                    </button>
+                    <div class="manual-topic-content" style="display:none;margin:0.35rem 0 0.65rem;padding:0 0.75rem 0.55rem;color:var(--text-muted);">
+                        가족과 같은 물건 목록을 함께 쓰기 위한 기능입니다. 설정 &gt; 계정 관리 &gt; <b>[카카오톡으로 가족 초대하기]</b> 선택 &gt; 초대 메시지 복사 &gt; 카카오톡으로 전달 &gt; 가족은 링크 접속 후 로그인합니다.
+                    </div>
+                    <button type="button" class="manual-topic-btn" style="width:100%;background:var(--surface-color);color:var(--text-main);border:1px solid var(--border-color);border-radius:10px;padding:0.65rem 0.75rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:space-between;text-align:left;">
+                        <span>6. 앱 설치방법</span><i data-lucide="chevron-down" style="width:15px;height:15px;"></i>
                     </button>
                     <div class="manual-topic-content" style="display:none;margin:0.35rem 0 0;padding:0 0.75rem 0.15rem;color:var(--text-muted);">
-                        크롬으로 물건어디 사이트에 접속한 뒤, 주소창 우측 상단의 <i data-lucide="download" style="width:15px;height:15px;vertical-align:-3px;"></i> 다운로드/설치 버튼을 누르고 설치를 진행합니다.
+                        크롬으로 물건어디 사이트 접속 &gt; 주소창 우측 상단의 <i data-lucide="download" style="width:15px;height:15px;vertical-align:-3px;"></i> 다운로드/설치 버튼 선택 &gt; <b>[설치]</b> 누르기
                     </div>
                 </div>
             </div>
 
-            <div style="margin-bottom:1.5rem;">
-                <h3 style="font-size:0.9rem;color:var(--text-muted);margin-bottom:0.5rem;">5. 테마</h3>
+            <div id="settingsThemeSection" style="margin-bottom:1.5rem;order:3;">
+                <h3 style="font-size:0.9rem;color:var(--text-muted);margin-bottom:0.5rem;">3. 테마</h3>
                 <div style="display:flex; gap:0.8rem; flex-wrap:wrap; align-items:center;">
                     <button type="button" class="theme-btn" data-theme="light" title="라이트(기본)" style="background:#f8fafc; border:2px solid #ccc; width:44px; height:44px; border-radius:50%; cursor:pointer; transition:transform 0.2s;"></button>
                     <button type="button" class="theme-btn" data-theme="dark" title="다크 모드" style="background:#1e293b; border:2px solid #334155; width:44px; height:44px; border-radius:50%; cursor:pointer; transition:transform 0.2s;"></button>
@@ -246,14 +252,18 @@
                 </div>
             </div>
 
-            <div style="border-top:1px solid var(--border-color);padding-top:1rem;">
+            <div id="settingsUpdateSection" style="border-top:1px solid var(--border-color);padding-top:1rem;order:6;">
+                <h3 style="font-size:0.9rem;color:var(--text-muted);margin:0 0 0.7rem;">6. 앱 업데이트</h3>
                 <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
                     <span style="font-size:0.84rem;color:var(--text-muted);font-weight:700;">현재 버전</span>
-                    <span id="settingsVersionText" style="font-size:0.84rem;color:var(--text-main);font-weight:800;">v22</span>
+                    <span id="settingsVersionText" style="font-size:0.84rem;color:var(--text-main);font-weight:800;">v23</span>
                 </div>
                 <p id="settingsVersionStatus" style="margin:0.35rem 0 0;color:var(--text-muted);font-size:0.72rem;line-height:1.4;text-align:right;">최신버전입니다</p>
                 <button id="btnOpenUpdateDetails" style="width:100%;margin-top:0.8rem;background:var(--bg-color);color:var(--text-main);border:1px solid var(--border-color);padding:0.65rem;border-radius:10px;font-weight:700;cursor:pointer;font-size:0.82rem;display:flex;align-items:center;justify-content:center;gap:5px;">
                     <i data-lucide="info" style="width:15px;height:15px;"></i>업데이트 내역 보기
+                </button>
+                <button id="btnAppUpdate" style="width:100%;margin-top:0.5rem;background:var(--primary-color);color:white;border:none;padding:0.7rem;border-radius:10px;font-weight:800;cursor:pointer;font-size:0.85rem;display:flex;align-items:center;justify-content:center;gap:6px;">
+                    <i data-lucide="refresh-cw" style="width:15px;height:15px;"></i>앱 업데이트
                 </button>
             </div>
         </div>
@@ -278,11 +288,11 @@
                         <h3 style="margin:0;font-size:1.35rem;color:#202124;font-weight:800;">최신 업데이트 사항</h3>
                         <span style="width:9px;height:9px;background:#2563eb;border-radius:50%;display:inline-block;"></span>
                     </div>
-                    <p id="latestUpdateMeta" style="margin:0 0 1.1rem;color:#5f6368;font-size:0.94rem;">v22 · 2026.05.19.</p>
+                    <p id="latestUpdateMeta" style="margin:0 0 1.1rem;color:#5f6368;font-size:0.94rem;">v23 · 2026.05.20.</p>
                     <div id="latestUpdateItems" style="color:#202124;font-size:1rem;line-height:1.65;">
-                        <p style="margin:0 0 0.55rem;">• 2페이지 우측 상단에 설정 버튼 추가</p>
-                        <p style="margin:0 0 0.55rem;">• 앱 사용설명서를 항목별 펼쳐보기 방식으로 개선</p>
-                        <p style="margin:0;">• 앱 설치방법 안내와 설치 아이콘 표시 추가</p>
+                        <p style="margin:0 0 0.55rem;">• 설정 화면 구성을 더 보기 쉽게 정리</p>
+                        <p style="margin:0 0 0.55rem;">• 백업 기록에 백업자 표시 추가</p>
+                        <p style="margin:0;">• 2페이지에서 바로 설정 열기 지원</p>
                     </div>
                 </section>
                 <section style="padding:1.6rem 1.4rem;background:#ffffff;">
@@ -334,7 +344,7 @@
             <i data-lucide="chevron-right" style="width:28px; height:28px;"></i>
         </button>
     </div>
-    <script src="js/firebase-sync.js?v=22"></script>
-    <script src="js/script.js?v=22"></script>
+    <script src="js/firebase-sync.js?v=23"></script>
+    <script src="js/script.js?v=23"></script>
 </body>
 </html>

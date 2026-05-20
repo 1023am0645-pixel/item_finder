@@ -1,6 +1,15 @@
 document.addEventListener('DOMContentLoaded', () => {
     const APP_UPDATE_HISTORY = [
         {
+            version: 'v23',
+            date: '2026.05.20.',
+            items: [
+                '설정 화면 구성을 더 보기 쉽게 정리',
+                '백업 기록에 백업자 표시 추가',
+                '2페이지에서 바로 설정 열기 지원'
+            ]
+        },
+        {
             version: 'v22',
             date: '2026.05.19.',
             items: [
@@ -303,12 +312,12 @@ document.addEventListener('DOMContentLoaded', () => {
                      <span style="position:relative; z-index:1; font-family:'Gaegu', cursive; font-size:1.05em; color:${theme === 'dark' ? '#e2e8f0' : '#333'}; font-weight:700;">${nick}</span>
                      <span style="position:absolute; bottom:0; left:0; width:100%; height:1px; background-color:${theme === 'dark' ? 'rgba(226,232,240,0.5)' : 'rgba(100,100,100,0.5)'}; z-index:0;"></span>
                    </span>`;
-                t.innerHTML = `${nickHtml} <span style="font-family:'Nanum Pen Script', cursive; vertical-align:middle; color:${baseTextColor}; font-size:0.95em;">물건어디</span><span style="color:${qColor}; font-family:'Nanum Pen Script', cursive; margin-left:4px; font-weight:900; font-size:1.3em; display:inline-block; transform:translateY(2px);">?</span>`;
+                t.innerHTML = `${nickHtml} <span style="font-family:'Gaegu','Pretendard',sans-serif; vertical-align:middle; color:${baseTextColor}; font-size:0.95em; font-weight:700;">물건어디</span><span style="color:${qColor}; font-family:'Gaegu','Pretendard',sans-serif; margin-left:4px; font-weight:700; font-size:1.15em; display:inline-block; transform:translateY(1px);">?</span>`;
             } else {
                 if (isRoomsPage) {
                     t.innerHTML = `<span style="font-family:'Nanum Pen Script', cursive; color:var(--text-main); opacity:0.7;">Home item list</span>`;
                 } else {
-                    t.innerHTML = `<span style="font-family:'Nanum Pen Script', cursive; color:${baseTextColor};">물건어디</span><span style="color:${qColor}; font-family:'Nanum Pen Script', cursive; margin-left:4px; font-weight:900; font-size:1.3em; display:inline-block; transform:translateY(2px);">?</span>`;
+                    t.innerHTML = `<span style="font-family:'Gaegu','Pretendard',sans-serif; color:${baseTextColor}; font-weight:700;">물건어디</span><span style="color:${qColor}; font-family:'Gaegu','Pretendard',sans-serif; margin-left:4px; font-weight:700; font-size:1.15em; display:inline-block; transform:translateY(1px);">?</span>`;
                 }
             }
         });
@@ -346,6 +355,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnOpenSettings = document.getElementById('btnOpenSettings');
     const btnCloseSettings = document.getElementById('btnCloseSettings');
     const settingsOverlay = document.getElementById('settingsOverlay');
+    const btnToggleAccountActions = document.getElementById('btnToggleAccountActions');
+    const accountActionList = document.getElementById('accountActionList');
     const btnEditNickname = document.getElementById('btnEditNickname');
     const btnKakaoLogout = document.getElementById('btnKakaoLogout');
     const btnInviteFamily = document.getElementById('btnInviteFamily');
@@ -417,6 +428,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 history.replaceState(null, '', window.location.pathname + window.location.search);
             }
         });
+        if (btnToggleAccountActions && accountActionList) {
+            btnToggleAccountActions.addEventListener('click', () => {
+                accountActionList.style.display = accountActionList.style.display === 'flex' ? 'none' : 'flex';
+            });
+        }
         btnEditNickname.addEventListener('click', () => {
             let nick = prompt('새로운 닉네임을 입력해주세요:', localStorage.getItem('kc_nickname') || '');
             if (nick && nick.trim() !== '') {
@@ -588,7 +604,11 @@ document.addEventListener('DOMContentLoaded', () => {
             row.style.borderRadius = '8px';
             row.style.alignItems = 'center';
             const dateStr = new Date(b.date).toLocaleString('ko-KR', { month:'short', day:'numeric', hour:'numeric', minute:'numeric' });
-            row.innerHTML = `<span style="font-size:0.85rem;">${dateStr} (${b.count}개)</span>
+            const author = b.authorNickname || b.createdByNickname || '기존 백업';
+            row.innerHTML = `<div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
+                    <span style="font-size:0.85rem;color:var(--text-main);">${dateStr} (${b.count}개)</span>
+                    <span style="font-size:0.72rem;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">백업자: ${author}</span>
+                </div>
                 <div style="display:flex;gap:4px;align-items:center;">
                     <button class="restore-backup-btn" data-index="${idx}" style="background:var(--primary-color);color:white;border:none;border-radius:6px;padding:4px 8px;font-size:0.8rem;cursor:pointer;">복원</button>
                     <button class="delete-backup-btn" data-index="${idx}" style="background:transparent;color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:6px;padding:4px 6px;font-size:0.8rem;cursor:pointer;line-height:1;"><i data-lucide="x" style="width:14px;height:14px;"></i></button>
@@ -662,10 +682,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const versionText = document.getElementById('settingsVersionText');
         const versionStatus = document.getElementById('settingsVersionStatus');
         const btnOpenUpdateDetails = document.getElementById('btnOpenUpdateDetails');
+        const btnAppUpdate = document.getElementById('btnAppUpdate');
         if (versionText) versionText.textContent = `${APP_VERSION} · ${APP_RELEASE_DATE}`;
         updateVersionStatus();
         if (btnOpenUpdateDetails) {
             btnOpenUpdateDetails.addEventListener('click', () => openUpdateDetails(false));
+        }
+        if (btnAppUpdate) {
+            btnAppUpdate.addEventListener('click', refreshAppForUpdate);
         }
     }
 
@@ -820,20 +844,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         const btnReload = document.getElementById('btnReloadForUpdate');
         if (btnReload) {
-            btnReload.onclick = async () => {
-                btnReload.disabled = true;
-                btnReload.textContent = '업데이트 중...';
-                try {
-                    if ('serviceWorker' in navigator) {
-                        const registrations = await navigator.serviceWorker.getRegistrations();
-                        await Promise.all(registrations.map(reg => reg.update().catch(() => {})));
-                    }
-                } catch(e) {}
-                window.location.reload();
-            };
+            btnReload.onclick = refreshAppForUpdate;
         }
         overlay.style.display = 'flex';
         if (window.lucide) lucide.createIcons();
+    }
+
+    async function refreshAppForUpdate() {
+        try {
+            if ('serviceWorker' in navigator) {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                await Promise.all(registrations.map(reg => reg.update().catch(() => {})));
+            }
+        } catch(e) {}
+        window.location.reload();
     }
 
     async function checkVersionAndShowStartupPopup() {
@@ -1131,6 +1155,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 date: new Date().toISOString(),
                 count: parsed.length,
                 data: parsed,
+                authorNickname: localStorage.getItem('kc_nickname') || '회원',
+                authorUserId: localStorage.getItem('kc_user_id') || '',
                 zones: JSON.parse(localStorage.getItem('itemFinder_zones') || '{}'),
                 rooms: JSON.parse(localStorage.getItem('itemFinder_rooms') || '[]')
             };
@@ -1225,29 +1251,4 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Share Logic
-    const btnShareApp = document.getElementById('btnShareApp');
-    if (btnShareApp) {
-        btnShareApp.addEventListener('click', async () => {
-            if(window.location.protocol === 'file:') {
-                showToast('현재 컴퓨터 내부(로컬)에서 실행 중입니다. 안전한 링크 공유를 위해 알림 가이드를 따라 호스팅 서버에 먼저 배포해주세요!');
-                return;
-            }
-            if (navigator.share) {
-                try {
-                    await navigator.share({
-                        title: '물건어디? - 스마트 홈 인벤토리',
-                        text: '우리집 구석구석 숨어있는 물건들, 여기서 한눈에 쉽게 기록하고 찾아보세요!',
-                        url: window.location.href,
-                    });
-                } catch (err) {
-                    console.error('공유 취소 또는 실패:', err);
-                }
-            } else {
-                navigator.clipboard.writeText(window.location.href).then(() => {
-                    showToast('링크가 클립보드에 복사되었습니다! 카카오톡이나 메시지에 붙여넣으세요.');
-                });
-            }
-        });
-    }
 });

@@ -74,6 +74,133 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     updateAppTitle();
 
+    // Settings overlay on rooms page
+    const btnOpenRoomsSettings = document.getElementById('btnOpenRoomsSettings');
+    const roomsSettingsOverlay = document.getElementById('roomsSettingsOverlay');
+    const btnCloseRoomsSettings = document.getElementById('btnCloseRoomsSettings');
+    const roomsSettingsNicknameDisplay = document.getElementById('roomsSettingsNicknameDisplay');
+    const btnToggleRoomsAccountActions = document.getElementById('btnToggleRoomsAccountActions');
+    const roomsAccountActionList = document.getElementById('roomsAccountActionList');
+    const btnRoomsEditNickname = document.getElementById('btnRoomsEditNickname');
+    const btnRoomsInviteFamily = document.getElementById('btnRoomsInviteFamily');
+    const btnRoomsJoinGroup = document.getElementById('btnRoomsJoinGroup');
+    const btnRoomsSwitchAccount = document.getElementById('btnRoomsSwitchAccount');
+    const btnRoomsLogout = document.getElementById('btnRoomsLogout');
+    const btnRoomsSettingsRefresh = document.getElementById('btnRoomsSettingsRefresh');
+    const btnRoomsAppUpdate = document.getElementById('btnRoomsAppUpdate');
+    const btnRoomsOpenUpdateDetails = document.getElementById('btnRoomsOpenUpdateDetails');
+    const roomsUpdateDetailsPanel = document.getElementById('roomsUpdateDetailsPanel');
+
+    function openRoomsSettings() {
+        if (!roomsSettingsOverlay) return;
+        if (roomsSettingsNicknameDisplay) roomsSettingsNicknameDisplay.textContent = localStorage.getItem('kc_nickname') || '회원';
+        roomsSettingsOverlay.style.display = 'flex';
+        if (window.lucide) lucide.createIcons();
+    }
+
+    async function reloadForAppUpdate() {
+        try {
+            if ('serviceWorker' in navigator) {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                await Promise.all(registrations.map(reg => reg.update().catch(() => {})));
+            }
+        } catch(e) {}
+        window.location.reload();
+    }
+
+    if (btnOpenRoomsSettings) btnOpenRoomsSettings.addEventListener('click', openRoomsSettings);
+    if (btnCloseRoomsSettings) btnCloseRoomsSettings.addEventListener('click', () => { roomsSettingsOverlay.style.display = 'none'; });
+    if (btnToggleRoomsAccountActions && roomsAccountActionList) {
+        btnToggleRoomsAccountActions.addEventListener('click', () => {
+            roomsAccountActionList.style.display = roomsAccountActionList.style.display === 'flex' ? 'none' : 'flex';
+        });
+    }
+    if (btnRoomsEditNickname) {
+        btnRoomsEditNickname.addEventListener('click', () => {
+            const nick = prompt('새로운 닉네임을 입력해주세요:', localStorage.getItem('kc_nickname') || '');
+            if (nick && nick.trim()) {
+                localStorage.setItem('kc_nickname', nick.trim());
+                if (roomsSettingsNicknameDisplay) roomsSettingsNicknameDisplay.textContent = nick.trim();
+                if (window.updateNicknameInCloud) window.updateNicknameInCloud(nick.trim()).catch(() => {});
+                showToast('닉네임이 변경되었습니다.');
+            }
+        });
+    }
+    if (btnRoomsInviteFamily) {
+        btnRoomsInviteFamily.addEventListener('click', async () => {
+            btnRoomsInviteFamily.disabled = true;
+            btnRoomsInviteFamily.textContent = '초대 코드 생성 중...';
+            const myNick = localStorage.getItem('kc_nickname') || '가족';
+            const baseUrl = 'https://1023am0645-pixel.github.io/item_finder/';
+            const code = window.createInviteCode ? await window.createInviteCode() : null;
+            btnRoomsInviteFamily.disabled = false;
+            btnRoomsInviteFamily.textContent = '카카오톡으로 가족 초대하기';
+            if (!code) { showToast('초대 코드 생성에 실패했어요.'); return; }
+            const message = `${myNick}님이 '물건어디' 앱에 초대했어요!\n\n${baseUrl}?invite=${code}\n\n초대 코드: ${code}`;
+            navigator.clipboard.writeText(message).then(() => showToast('초대 메시지가 복사됐어요.')).catch(() => alert(message));
+        });
+    }
+    if (btnRoomsJoinGroup) {
+        btnRoomsJoinGroup.addEventListener('click', async () => {
+            const code = prompt('받은 초대 코드를 입력해주세요:');
+            if (!code || !code.trim()) return;
+            const joined = window.joinGroup ? await window.joinGroup(code.trim().toUpperCase()) : false;
+            if (joined) {
+                showToast('그룹에 합류했어요. 데이터를 불러올게요.');
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
+                showToast('초대 코드가 유효하지 않아요.');
+            }
+        });
+    }
+    if (btnRoomsSwitchAccount) {
+        btnRoomsSwitchAccount.addEventListener('click', () => {
+            localStorage.removeItem('kc_logged_in');
+            window.location.href = 'index.html';
+        });
+    }
+    if (btnRoomsLogout) {
+        btnRoomsLogout.addEventListener('click', () => {
+            localStorage.removeItem('kc_logged_in');
+            localStorage.removeItem('kc_nickname');
+            window.location.href = 'index.html';
+        });
+    }
+    document.querySelectorAll('.rooms-theme-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const theme = btn.getAttribute('data-theme');
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('itemFinder_theme', theme);
+            updateAppTitle();
+            applyFloatingButtonTheme();
+        });
+    });
+    if (btnRoomsSettingsRefresh) {
+        btnRoomsSettingsRefresh.addEventListener('click', async () => {
+            btnRoomsSettingsRefresh.textContent = '불러오는 중...';
+            if (window.loadFromCloud) await window.loadFromCloud().catch(() => {});
+            window.location.reload();
+        });
+    }
+    if (btnRoomsAppUpdate) btnRoomsAppUpdate.addEventListener('click', reloadForAppUpdate);
+    if (btnRoomsOpenUpdateDetails) {
+        btnRoomsOpenUpdateDetails.addEventListener('click', () => {
+            if (!roomsUpdateDetailsPanel) return;
+            roomsUpdateDetailsPanel.style.display = roomsUpdateDetailsPanel.style.display === 'block' ? 'none' : 'block';
+        });
+    }
+    document.querySelectorAll('.rooms-manual-topic-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const content = btn.nextElementSibling;
+            if (!content || !content.classList.contains('rooms-manual-topic-content')) return;
+            const isOpen = content.style.display === 'block';
+            content.style.display = isOpen ? 'none' : 'block';
+            const icon = btn.querySelector('i[data-lucide]');
+            if (icon) icon.setAttribute('data-lucide', isOpen ? 'chevron-down' : 'chevron-up');
+            if (window.lucide) lucide.createIcons();
+        });
+    });
+
     // Toast UI
     function showToast(msg) {
         let container = document.getElementById('toastContainer');
@@ -109,6 +236,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 date: new Date().toISOString(),
                 count: parsed.length,
                 data: parsed,
+                authorNickname: localStorage.getItem('kc_nickname') || '회원',
+                authorUserId: localStorage.getItem('kc_user_id') || '',
                 zones: JSON.parse(localStorage.getItem('itemFinder_zones') || '{}'),
                 rooms: JSON.parse(localStorage.getItem('itemFinder_rooms') || '[]')
             };
@@ -907,6 +1036,8 @@ document.addEventListener('DOMContentLoaded', () => {
             let backups = JSON.parse(localStorage.getItem('itemFinder_backups')) || [];
             const newBackup = {
                 id: Date.now().toString(), date: new Date().toISOString(), count: parsed.length, data: parsed,
+                authorNickname: localStorage.getItem('kc_nickname') || '회원',
+                authorUserId: localStorage.getItem('kc_user_id') || '',
                 zones: JSON.parse(localStorage.getItem('itemFinder_zones') || '{}'),
                 rooms: JSON.parse(localStorage.getItem('itemFinder_rooms') || '[]')
             };
