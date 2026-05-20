@@ -1,0 +1,598 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI를 활용한 청렴 관련 공단 캐릭터 PC 배경화면 제작 교육</title>
+  <style>
+    :root {
+      --paper: #ffffff;
+      --ink: #202124;
+      --muted: #6f675f;
+      --soft-muted: #8a8076;
+      --line: #eadfd1;
+      --primary: #f47b20;
+      --primary-dark: #c9570d;
+      --soft: #fff0dc;
+      --soft-green: #eef7ef;
+      --green: #47795c;
+      --shadow: 0 16px 40px rgba(91, 65, 35, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at top left, rgba(244, 123, 32, 0.12), transparent 32rem),
+        linear-gradient(180deg, #fffaf4 0%, #fff 44%, #fffaf4 100%);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+      font-size: 16px;
+      line-height: 1.72;
+      word-break: keep-all;
+      overflow-wrap: break-word;
+    }
+
+    a {
+      color: var(--primary-dark);
+      text-decoration-thickness: 0.08em;
+      text-underline-offset: 0.18em;
+    }
+
+    .page {
+      width: min(100%, 920px);
+      margin: 0 auto;
+      padding: 28px 18px 56px;
+    }
+
+    .hero {
+      padding: 34px 24px 28px;
+      border: 1px solid rgba(244, 123, 32, 0.18);
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: var(--shadow);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 12px;
+      padding: 5px 11px;
+      border-radius: 999px;
+      background: var(--soft);
+      color: var(--primary-dark);
+      font-size: 0.86rem;
+      font-weight: 700;
+    }
+
+    h1 {
+      margin: 0;
+      color: #151515;
+      font-size: clamp(1.7rem, 5.8vw, 2.95rem);
+      line-height: 1.18;
+      letter-spacing: 0;
+    }
+
+    .title-main,
+    .title-sub {
+      display: block;
+    }
+
+    .title-sub {
+      margin-top: 0.24rem;
+      font-size: 0.88em;
+      line-height: 1.22;
+    }
+
+    .intro {
+      margin: 12px 0 0;
+      color: var(--soft-muted);
+      font-size: 0.92rem;
+    }
+
+    .toc {
+      margin: 22px 0 26px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--paper);
+      box-shadow: 0 10px 24px rgba(91, 65, 35, 0.07);
+    }
+
+    .toc-title {
+      margin: 0 0 12px;
+      font-size: 1.05rem;
+      font-weight: 800;
+    }
+
+    .toc-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .toc a {
+      display: block;
+      padding: 12px 13px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fffdf9;
+      color: #312820;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .toc a small {
+      display: block;
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    section {
+      margin-top: 24px;
+      padding: 24px;
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: var(--paper);
+      box-shadow: 0 12px 26px rgba(91, 65, 35, 0.07);
+    }
+
+    h2,
+    h3,
+    h4 {
+      color: #201914;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      margin: 0 0 18px;
+      font-size: clamp(1.45rem, 5vw, 2.15rem);
+      line-height: 1.28;
+    }
+
+    h3 {
+      margin: 28px 0 12px;
+      padding-top: 2px;
+      font-size: 1.24rem;
+    }
+
+    h3:first-child {
+      margin-top: 0;
+    }
+
+    h4 {
+      margin: 20px 0 9px;
+      font-size: 1.05rem;
+    }
+
+    p {
+      margin: 0 0 14px;
+    }
+
+    ul,
+    ol {
+      margin: 10px 0 0;
+      padding-left: 1.25rem;
+    }
+
+    li {
+      margin: 7px 0;
+    }
+
+    .quote-list {
+      display: grid;
+      gap: 10px;
+      margin: 12px 0 18px;
+    }
+
+    .quote-card,
+    .prompt-card,
+    .tip-card {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #fffdf9;
+    }
+
+    .quote-card {
+      padding: 14px 15px;
+      border-left: 5px solid var(--primary);
+      color: #3f362f;
+      font-weight: 650;
+    }
+
+    .prompt-grid {
+      display: grid;
+      gap: 12px;
+      margin: 12px 0 18px;
+    }
+
+    .prompt-card,
+    .tip-card {
+      padding: 15px 16px;
+    }
+
+    .prompt-card strong,
+    .tip-card strong {
+      display: block;
+      margin-bottom: 6px;
+      color: #2c241d;
+    }
+
+    .prompt-card p,
+    .tip-card p {
+      margin-bottom: 0;
+      color: #473f38;
+    }
+
+    .prompt-card p + p,
+    .tip-card p + p {
+      margin-top: 0.72rem;
+    }
+
+    .english-prompt {
+      padding: 16px;
+      border-radius: 16px;
+      background: #f7f2ec;
+      color: #302922;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: 0.93rem;
+      line-height: 1.65;
+    }
+
+    .translation {
+      margin: 8px 0 0;
+      color: var(--soft-muted);
+      font-size: 0.86rem;
+      line-height: 1.55;
+    }
+
+    .table-scroll {
+      margin: 12px 0 20px;
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #fff;
+    }
+
+    table {
+      width: 100%;
+      min-width: 620px;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+    }
+
+    th,
+    td {
+      padding: 13px 14px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #fff6ea;
+      color: #35281d;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    code {
+      padding: 2px 6px;
+      border-radius: 7px;
+      background: #f4eee6;
+      color: #433126;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: 0.92em;
+    }
+
+    .link-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      margin: 4px 0 16px;
+      padding: 10px 16px;
+      border-radius: 14px;
+      background: var(--primary);
+      color: #fff;
+      font-weight: 800;
+      text-decoration: none;
+      box-shadow: 0 9px 20px rgba(244, 123, 32, 0.22);
+    }
+
+    .note {
+      margin-top: 18px;
+      padding: 14px 15px;
+      border-radius: 15px;
+      background: var(--soft-green);
+      color: #365b44;
+      font-size: 0.95rem;
+      font-weight: 650;
+    }
+
+    .safety-note {
+      margin: 14px 0 18px;
+      padding: 14px 15px;
+      border: 1px solid rgba(244, 123, 32, 0.2);
+      border-radius: 15px;
+      background: #fff7ed;
+      color: #5d4030;
+      font-size: 0.93rem;
+      font-weight: 650;
+    }
+
+    .top-link {
+      display: inline-flex;
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 0.92rem;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .footer {
+      margin-top: 22px;
+      color: var(--muted);
+      font-size: 0.9rem;
+      text-align: center;
+    }
+
+    @media (max-width: 720px) {
+      .page {
+        padding: 18px 12px 42px;
+      }
+
+      .hero,
+      section {
+        border-radius: 18px;
+        padding: 20px 16px;
+      }
+
+      .toc {
+        border-radius: 16px;
+        padding: 14px;
+      }
+
+      .toc-grid {
+        grid-template-columns: 1fr;
+      }
+
+      table {
+        min-width: 560px;
+        font-size: 0.9rem;
+      }
+
+      th,
+      td {
+        padding: 11px 12px;
+      }
+    }
+
+    @media print {
+      body {
+        background: #fff;
+      }
+
+      .page {
+        width: 100%;
+        padding: 0;
+      }
+
+      .hero,
+      .toc,
+      section {
+        box-shadow: none;
+        break-inside: avoid;
+      }
+
+      a {
+        color: #111;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main id="top" class="page">
+    <header class="hero">
+      <p class="eyebrow">교육 공유자료 · 2026.05.21.</p>
+      <h1><span class="title-main">AI를 활용한 청렴 관련</span><span class="title-sub">공단 캐릭터 PC 배경화면 제작 교육</span></h1>
+      <p class="intro">자료 공유 &amp; 물건어디 앱 소개</p>
+    </header>
+
+    <nav class="toc" aria-label="목차">
+      <p class="toc-title">목차</p>
+      <div class="toc-grid">
+        <a href="#assistant-settings">나만의 비서 만들기<small>Gemini 맞춤 설정 문구</small></a>
+        <a href="#prompt-examples">프롬프트 예시<small>업무 활용과 이미지 생성용 문구</small></a>
+        <a href="#flow-revision">Google Flow 수정 요청 예시<small>수정 지시와 변형 금지 조건</small></a>
+        <a href="#chatgpt-tips">ChatGPT 설정 꿀팁<small>개인 맞춤 설정과 데이터 제어</small></a>
+        <a href="#item-finder">물건어디 앱 소개<small>바로가기와 간단 사용설명서</small></a>
+      </div>
+    </nav>
+
+    <section id="assistant-settings">
+      <h2>나만의 비서 만들기</h2>
+      <h3>Gemini 맞춤 설정</h3>
+      <div class="quote-list">
+        <div class="quote-card">"최신 정보가 필요한 내용은 웹 검색 등으로 확인하고, 정보의 출처와 날짜를 함께 알려줘."</div>
+        <div class="quote-card">"복잡한 법령이나 지침을 물어보면, 중학생도 이해할 수 있을 만큼 쉽게 비유를 들어서 설명해줘."</div>
+        <div class="quote-card">"사실 기반으로 대답해 줘. 검증된 자료만 인용하고, 확실하지 않거나 확인이 필요한 내용은 모르겠다고 말해줘."</div>
+        <div class="quote-card">"'다양한', '전반적인' 같은 모호한 표현은 피하고, 구체적인 수치나 사실 기반으로 서술해줘."</div>
+      </div>
+      <a class="top-link" href="#top">맨 위로 이동</a>
+    </section>
+
+    <section id="prompt-examples">
+      <h2>프롬프트 예시</h2>
+
+      <h3>업무 활용 예시</h3>
+      <div class="prompt-grid">
+        <div class="prompt-card">
+          <strong>건강검진 홍보 담당자</strong>
+          <p>나는 국민건강보험공단에서 건강검진 홍보를 담당하고 있어. 국민 대상 캠페인, 보도자료, 안내문, 카드 뉴스 같은 콘텐츠를 자주 만들고, 정확하면서도 이해하기 쉬운 표현을 선호해. 특히 비전문가도 쉽게 이해할 수 있는 건강정보 전달이 중요해. 홍보 문구나 콘텐츠를 만들 땐 신뢰감 + 따뜻한 어조로 부탁해.</p>
+        </div>
+        <div class="prompt-card">
+          <strong>정보보안 교육 담당자</strong>
+          <p>나는 조직 내 정보보안 교육을 담당하는 보안교육 담당자야. 주로 전 직원 대상 보안 공지, 월 1회 보안교육 콘텐츠를 제작하고 퀴즈이벤트, 이메일 공지 문구 등을 만들어. 보안이라는 주제가 딱딱하지 않게 느껴지도록, 쉽고 경각심을 줄 수 있는 말투를 선호해.</p>
+        </div>
+      </div>
+
+      <h3>이미지 생성용 문구</h3>
+      <p class="safety-note"><strong>[주의사항]</strong><br>기관 캐릭터, 로고, 내부자료는 사용 승인 범위 안에서만 업로드·활용하고, 개인정보나 민감정보는 프롬프트에 입력하지 않습니다.</p>
+      <div class="prompt-grid">
+        <div class="prompt-card">
+          <strong>아이디어 구상</strong>
+          <p>참고 이미지의 캐릭터들은 교육에서 사용 승인을 받은 건강보험공단 공식 캐릭터야. 이 캐릭터를 활용해서 청렴 가치(정직·투명·공정) 의미를 담은 16:9 비율의 PC 배경화면을 만들고 싶은데, 아이디어 5가지 구상해줘.</p>
+        </div>
+        <div class="prompt-card">
+          <strong>프롬프트 작성 요청</strong>
+          <p>2번째 아이디어가 마음에 드는데, 일부를 수정하고 싶어.</p>
+          <p>[배경, 시간대, 날씨, 분위기, 캐릭터 사항, 문구내용, 스타일 등 상세히 기재]</p>
+          <p>이 내용으로 만들어주되, 공공기관 이미지에 맞게 신뢰감 있고 따뜻한 분위기, 캐릭터가 승인된 공식 시트와 최대한 비슷하게 유지, 16:9 비율, 글씨는 감성폰트로. Flow 이미지 생성용 프롬프트 형식으로 작성해줘.</p>
+        </div>
+      </div>
+      <a class="top-link" href="#top">맨 위로 이동</a>
+    </section>
+
+    <section id="flow-revision">
+      <h2>Google Flow 수정 요청 예시</h2>
+
+      <div class="prompt-grid">
+        <div class="prompt-card">
+          <strong>1. 표정/스타일</strong>
+          <p>"캐릭터가 공식 시트와 더 비슷하도록 얼굴 비율과 색상을 수정해 줘. 과장된 표정은 줄이고 친근한 미소로 바꿔 줘."</p>
+        </div>
+        <div class="prompt-card">
+          <strong>2. 레이아웃/여백</strong>
+          <p>"한글 문구를 넣을 수 있도록 왼쪽 상단에 깨끗한 여백을 더 넓게 만들어 줘. 배경은 단순하게 유지해 줘."</p>
+        </div>
+        <div class="prompt-card">
+          <strong>3. 부적절 요소 제거</strong>
+          <p>"특정 브랜드, 스포츠 팀, 실존 인물 얼굴, 술잔 같은 요소는 제거하고 공공기관 캠페인 이미지처럼 만들어 줘."</p>
+        </div>
+        <div class="prompt-card">
+          <strong>4. 전체 분위기</strong>
+          <p>"전체 분위기는 청렴, 투명, 신뢰, 건강을 느낄 수 있도록 밝고 깨끗하게 조정해 줘."</p>
+        </div>
+      </div>
+
+      <h3>‘프롬프트 변형 금지’ 조건 예시</h3>
+      <div class="english-prompt">Keep the original character design exactly. Do not add a nose. Do not modify the eyes, face shape, or proportions. Preserve the original mascot appearance.</div>
+      <p class="translation">(원본 캐릭터 디자인을 정확히 유지해 주세요. 코를 추가하지 마세요. 눈, 얼굴형, 비율을 수정하지 마세요. 원래 캐릭터의 모습을 보존해 주세요.)</p>
+      <a class="top-link" href="#top">맨 위로 이동</a>
+    </section>
+
+    <section id="chatgpt-tips">
+      <h2>ChatGPT 설정 꿀팁</h2>
+
+      <h3>1. GPT용 ‘나만의 비서’ 설정</h3>
+      <p><strong>설정 경로:</strong> 설정 &gt; 개인 맞춤 설정 &gt; 특성 추가</p>
+      <div class="prompt-grid">
+        <div class="tip-card">
+          <strong>닉네임 설정</strong>
+          <p>대화 때 불리고 싶은 이름으로 설정합니다.</p>
+        </div>
+        <div class="tip-card">
+          <strong>사용자 페르소나 설정</strong>
+          <p>사용자의 직무나 관심사 등을 정의하여 ChatGPT가 맥락을 이해하도록 돕습니다. 예: 저는 건강보험공단에서 노인장기요양 제도 관련 업무를 담당합니다.</p>
+        </div>
+        <div class="tip-card">
+          <strong>ChatGPT 응답 형식 설정</strong>
+          <p>어떤 스타일과 깊이로 답변을 받을지 설정합니다.</p>
+        </div>
+      </div>
+
+      <h4>형식 설정 예시</h4>
+      <ul>
+        <li>표, 단계별 목록, 요약 + 세부 분석 혼합</li>
+        <li>불필요하고 장황한 설명 최소화</li>
+      </ul>
+
+      <h4>세부 요구사항 예시</h4>
+      <p>예: 공공기관 보고서 형식의 간결하고 체계적인 문서를 선호하며, 비전문가도 이해할 수 있는 쉬운 설명을 좋아합니다.</p>
+      <ul>
+        <li>정책 사업 보고서 스타일 준수</li>
+        <li>필요 시 참고자료 출처 제시(논문, 법령, 기사 등)</li>
+        <li>통계나 수치는 표로 시각화</li>
+      </ul>
+
+      <h3>2. Gemini의 [활동 기록 보관 중지]와 유사한 설정</h3>
+      <p><strong>설정 경로:</strong> 설정 &gt; 데이터 제어 &gt; ‘모든 사용자 대상 모델 개선’ 끄기</p>
+
+      <p class="note">보안/윤리사항 참고 문서 : <em>“국민건강보험공단(NHIS) 직원용 생성형 AI 활용 가이드북”</em></p>
+      <a class="top-link" href="#top">맨 위로 이동</a>
+    </section>
+
+    <section id="item-finder">
+      <h2>물건어디 앱 소개</h2>
+      <a class="link-button" href="https://1023am0645-pixel.github.io/item_finder/" target="_blank" rel="noopener">물건어디 바로가기</a>
+
+      <h3>앱 소개</h3>
+      <p><strong>물건어디</strong>는 집 안의 물건 위치를 기록하고, 나중에 빠르게 찾을 수 있도록 만든 앱입니다. 방별로 물건을 저장하고, 세부 구역과 메모, 사진까지 함께 관리할 수 있습니다.</p>
+
+      <h3>간단 사용설명서</h3>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>단계</th>
+              <th>설명</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>1. 카카오톡으로 로그인하기</strong></td>
+              <td>앱에 접속한 뒤 카카오 계정으로 로그인합니다.</td>
+            </tr>
+            <tr>
+              <td><strong>2. 물건 추가하기</strong></td>
+              <td>물건 이름 입력 → 위치(방) 선택 → 필요 시 세부 구역, 메모, 사진 추가 → <strong>[물건 저장하기]</strong>를 누릅니다.</td>
+            </tr>
+            <tr>
+              <td><strong>3. 저장 목록 확인하기</strong></td>
+              <td>홈 화면의 목록 보기 버튼을 눌러 2페이지로 이동한 뒤, <code>모아보기</code>, <code>펼쳐보기</code>, <code>골라보기</code>, <code>전체보기</code> 중 원하는 방식으로 확인합니다.</td>
+            </tr>
+            <tr>
+              <td><strong>4. 방과 세부 구역 관리하기</strong></td>
+              <td>2페이지의 <strong>[방 관리]</strong>에서 방을 추가/삭제하고, 각 방 안에 A-1, 상단 선반, 서랍 안쪽 같은 세부 구역을 추가할 수 있습니다.</td>
+            </tr>
+            <tr>
+              <td><strong>5. 가족과 함께 사용하기</strong></td>
+              <td>설정 → 계정 관리 → <strong>[카카오톡으로 가족 초대하기]</strong>를 통해 가족에게 초대 메시지를 보낼 수 있습니다.</td>
+            </tr>
+            <tr>
+              <td><strong>6. 백업/복원하기</strong></td>
+              <td>설정 → 백업/복원에서 <strong>[백업하기]</strong>, <strong>[복원하기]</strong> 기능을 사용할 수 있습니다.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>추천 사용 예시</h3>
+      <ul>
+        <li>자주 잃어버리는 물건 위치 기록</li>
+        <li>펜트리, 창고, 서랍장 물건 정리</li>
+        <li>가족과 함께 집 안 물건 위치 공유</li>
+        <li>이사 전후 물건 위치 관리</li>
+      </ul>
+      <a class="top-link" href="#top">맨 위로 이동</a>
+    </section>
+
+    <p class="footer">휴대폰에서는 이 HTML 파일을 브라우저로 열면 목차 링크와 앱 바로가기를 그대로 사용할 수 있습니다.</p>
+  </main>
+</body>
+</html>
