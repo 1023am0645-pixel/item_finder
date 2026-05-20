@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
         else if(theme === 'positano') qColor = '#f59e0b';
 
         titles.forEach(t => {
-            t.innerHTML = `<span style="font-family:'Nanum Pen Script', cursive; color:var(--text-main);">Home item list</span>`;
+            t.innerHTML = `<span style="font-family:'Nanum Pen Script', cursive; color:var(--text-main); font-weight:400;">Home item list</span>`;
         });
         
         // Update search bar wrapper color
@@ -84,7 +84,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnRoomsEditNickname = document.getElementById('btnRoomsEditNickname');
     const btnRoomsInviteFamily = document.getElementById('btnRoomsInviteFamily');
     const btnRoomsJoinGroup = document.getElementById('btnRoomsJoinGroup');
-    const btnRoomsSwitchAccount = document.getElementById('btnRoomsSwitchAccount');
     const btnRoomsLogout = document.getElementById('btnRoomsLogout');
     const btnRoomsSettingsRefresh = document.getElementById('btnRoomsSettingsRefresh');
     const btnRoomsAppUpdate = document.getElementById('btnRoomsAppUpdate');
@@ -106,6 +105,87 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch(e) {}
         window.location.reload();
+    }
+
+    function ensureKakaoReady() {
+        if (!window.Kakao) return false;
+        if (!window.Kakao.isInitialized()) {
+            window.Kakao.init('aba8aed2de3168350dd5fdf66f95820c');
+        }
+        return window.Kakao.isInitialized();
+    }
+
+    async function fallbackShareInvite(message, inviteUrl) {
+        if (navigator.share) {
+            await navigator.share({
+                title: '물건어디 가족 초대',
+                text: message,
+                url: inviteUrl
+            });
+            return;
+        }
+        await navigator.clipboard.writeText(message);
+        showToast('카카오톡 공유가 어려워 초대 메시지를 복사했어요.');
+    }
+
+    async function shareInviteToKakao(code, myNick) {
+        const inviteUrl = `https://1023am0645-pixel.github.io/item_finder/?invite=${code}`;
+        const message = `${myNick}님이 '물건어디' 앱에 초대했어요!\n\n가족과 같은 물건 목록을 함께 관리해요.\n\n가족 초대코드: ${code}\n초대 링크: ${inviteUrl}`;
+        const imageUrl = 'https://1023am0645-pixel.github.io/item_finder/assets/hero.png';
+
+        if (ensureKakaoReady() && window.Kakao.Link && window.Kakao.Link.sendDefault) {
+            window.Kakao.Link.sendDefault({
+                objectType: 'feed',
+                content: {
+                    title: '물건어디 가족 초대',
+                    description: `가족 초대코드: ${code}`,
+                    imageUrl,
+                    link: {
+                        mobileWebUrl: inviteUrl,
+                        webUrl: inviteUrl
+                    }
+                },
+                buttons: [
+                    {
+                        title: '물건어디 열기',
+                        link: {
+                            mobileWebUrl: inviteUrl,
+                            webUrl: inviteUrl
+                        }
+                    }
+                ]
+            });
+            showToast('카카오톡 공유창을 열었어요.');
+            return;
+        }
+
+        if (ensureKakaoReady() && window.Kakao.Share && window.Kakao.Share.sendDefault) {
+            window.Kakao.Share.sendDefault({
+                objectType: 'feed',
+                content: {
+                    title: '물건어디 가족 초대',
+                    description: `가족 초대코드: ${code}`,
+                    imageUrl,
+                    link: {
+                        mobileWebUrl: inviteUrl,
+                        webUrl: inviteUrl
+                    }
+                },
+                buttons: [
+                    {
+                        title: '물건어디 열기',
+                        link: {
+                            mobileWebUrl: inviteUrl,
+                            webUrl: inviteUrl
+                        }
+                    }
+                ]
+            });
+            showToast('카카오톡 공유창을 열었어요.');
+            return;
+        }
+
+        await fallbackShareInvite(message, inviteUrl);
     }
 
     if (btnOpenRoomsSettings) btnOpenRoomsSettings.addEventListener('click', openRoomsSettings);
@@ -131,13 +211,15 @@ document.addEventListener('DOMContentLoaded', () => {
             btnRoomsInviteFamily.disabled = true;
             btnRoomsInviteFamily.textContent = '초대 코드 생성 중...';
             const myNick = localStorage.getItem('kc_nickname') || '가족';
-            const baseUrl = 'https://1023am0645-pixel.github.io/item_finder/';
             const code = window.createInviteCode ? await window.createInviteCode() : null;
             btnRoomsInviteFamily.disabled = false;
             btnRoomsInviteFamily.textContent = '카카오톡으로 가족 초대하기';
             if (!code) { showToast('초대 코드 생성에 실패했어요.'); return; }
-            const message = `${myNick}님이 '물건어디' 앱에 초대했어요!\n\n${baseUrl}?invite=${code}\n\n초대 코드: ${code}`;
-            navigator.clipboard.writeText(message).then(() => showToast('초대 메시지가 복사됐어요.')).catch(() => alert(message));
+            try {
+                await shareInviteToKakao(code, myNick);
+            } catch(e) {
+                showToast('초대 공유를 완료하지 못했어요.');
+            }
         });
     }
     if (btnRoomsJoinGroup) {
@@ -151,12 +233,6 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 showToast('초대 코드가 유효하지 않아요.');
             }
-        });
-    }
-    if (btnRoomsSwitchAccount) {
-        btnRoomsSwitchAccount.addEventListener('click', () => {
-            localStorage.removeItem('kc_logged_in');
-            window.location.href = 'index.html';
         });
     }
     if (btnRoomsLogout) {

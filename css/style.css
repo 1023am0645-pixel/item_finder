@@ -15,6 +15,11 @@
   --bg-overlay: transparent;
   --surface-blur: 0px;
   --glass-border: none;
+  --settings-section-label-color: var(--text-muted);
+  --settings-submenu-bg: #ffffff;
+  --settings-submenu-border: rgba(15, 23, 42, 0.1);
+  --settings-submenu-divider: rgba(15, 23, 42, 0.08);
+  --settings-submenu-text: #1f2937;
 }
 
 /* Theme variables */
@@ -52,6 +57,9 @@
   --border-color: rgba(253, 224, 71, 0.5);
   --primary-color: #f59e0b;
   --primary-hover: #d97706;
+  --settings-section-label-color: #314a46;
+  --settings-submenu-border: rgba(49, 74, 70, 0.16);
+  --settings-submenu-divider: rgba(49, 74, 70, 0.12);
 }
 
 * {
@@ -119,7 +127,7 @@ header {
 .q-mark {
   color: var(--primary-color);
   font-size: 1.2em;
-  font-weight: 900;
+  font-weight: 400;
   vertical-align: middle;
   margin-left: 0.1rem;
   display: inline-block;
@@ -142,8 +150,8 @@ header {
 
 .logo {
   font-size: 2.2rem;
-  font-family: 'Gaegu', 'Pretendard', -apple-system, system-ui, sans-serif;
-  font-weight: 700;
+  font-family: 'Nanum Pen Script', cursive;
+  font-weight: 400;
   letter-spacing: 0;
   color: var(--text-main);
   white-space: nowrap;
@@ -155,6 +163,47 @@ header {
   font-size: 0.95rem;
   color: var(--text-muted);
   margin-top: 0.3rem;
+}
+
+.settings-panel h3 {
+  color: var(--settings-section-label-color) !important;
+}
+
+.account-action-list {
+  background: var(--settings-submenu-bg) !important;
+  border: 1px solid var(--settings-submenu-border) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+  overflow: hidden;
+  gap: 0 !important;
+  margin-top: 0.55rem !important;
+}
+
+.account-action-list .account-action-btn {
+  width: 100% !important;
+  background: transparent !important;
+  color: var(--settings-submenu-text) !important;
+  border: none !important;
+  border-bottom: 1px solid var(--settings-submenu-divider) !important;
+  border-radius: 0 !important;
+  padding: 0.82rem 0.9rem !important;
+  font-size: 0.86rem !important;
+  font-weight: 650 !important;
+  cursor: pointer;
+  display: flex !important;
+  align-items: center;
+  justify-content: flex-start !important;
+  gap: 8px;
+  text-align: left !important;
+  box-shadow: none !important;
+}
+
+.account-action-list .account-action-btn:last-child {
+  border-bottom: none !important;
+}
+
+.account-action-list .account-action-btn:hover {
+  background: rgba(15, 23, 42, 0.04) !important;
 }
 
 /* Hero Image */
