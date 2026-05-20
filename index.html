@@ -14,7 +14,7 @@
     <!-- Android PWA 설명 -->
     <meta name="description" content="우리집 물건 위치를 저장하고 찾아주는 홈 인벤토리 앱">
     <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;800;900&family=Nanum+Pen+Script&family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=26">
+    <link rel="stylesheet" href="css/style.css?v=27">
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://t1.kakaocdn.net/kakao_js_sdk/1.43.1/kakao.min.js"></script>
     <script>
@@ -205,7 +205,7 @@
                     </button>
                     <div class="manual-topic-content" style="display:none;margin:-0.1rem 0 0.65rem;padding:0 0.75rem 0.55rem;color:var(--text-muted);">
                         <p class="manual-summary">물건 이름과 위치를 저장해 나중에 바로 찾을 수 있습니다.</p>
-                        <p class="manual-flow">물건 이름 입력 &gt; 위치(방) 선택 &gt; 필요 시 구역·메모·사진 추가 &gt; <strong>[물건 저장하기]</strong></p>
+                        <p class="manual-flow">물건 이름 입력 &gt; 위치(방) 선택 &gt; 필요 시 세부 구역·메모·사진 추가 &gt; <strong>[물건 저장하기]</strong></p>
                     </div>
                     <button type="button" class="manual-topic-btn" style="width:100%;background:var(--surface-color);color:var(--text-main);border:1px solid var(--border-color);border-radius:10px;padding:0.65rem 0.75rem;margin-bottom:0.45rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:space-between;text-align:left;">
                         <span>2. 저장 목록 확인하기</span><i data-lucide="chevron-down" style="width:15px;height:15px;"></i>
@@ -218,25 +218,32 @@
                         <span>3. 방 추가/제거</span><i data-lucide="chevron-down" style="width:15px;height:15px;"></i>
                     </button>
                     <div class="manual-topic-content" style="display:none;margin:-0.1rem 0 0.65rem;padding:0 0.75rem 0.55rem;color:var(--text-muted);">
-                        <p class="manual-summary">우리집 구조에 맞게 방과 세부 구역을 관리할 수 있습니다.</p>
-                        <p class="manual-flow">2페이지 이동 &gt; <strong>[방 관리]</strong> &gt; 새 방 추가/기존 방 삭제 &gt; 각 방 아래에서 A-1, 상단 선반 같은 구역 추가</p>
+                        <p class="manual-summary">우리집 구조에 맞게 방 목록을 추가하거나 정리할 수 있습니다.</p>
+                        <p class="manual-flow">2페이지 이동 &gt; <strong>[방 관리]</strong> &gt; 새 방 추가 또는 기존 방 삭제</p>
                     </div>
                     <button type="button" class="manual-topic-btn" style="width:100%;background:var(--surface-color);color:var(--text-main);border:1px solid var(--border-color);border-radius:10px;padding:0.65rem 0.75rem;margin-bottom:0.45rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:space-between;text-align:left;">
-                        <span>4. 백업/복원</span><i data-lucide="chevron-down" style="width:15px;height:15px;"></i>
+                        <span>4. 세부 구역 추가</span><i data-lucide="chevron-down" style="width:15px;height:15px;"></i>
+                    </button>
+                    <div class="manual-topic-content" style="display:none;margin:-0.1rem 0 0.65rem;padding:0 0.75rem 0.55rem;color:var(--text-muted);">
+                        <p class="manual-summary">각 방의 구역을 더 세분화해서 관리할 수 있습니다.</p>
+                        <p class="manual-flow">2페이지 이동 &gt; <strong>[방 관리]</strong> &gt; 원하는 방 아래 구역 입력 &gt; A-1, 상단 선반, 서랍 안쪽처럼 필요한 구역 추가</p>
+                    </div>
+                    <button type="button" class="manual-topic-btn" style="width:100%;background:var(--surface-color);color:var(--text-main);border:1px solid var(--border-color);border-radius:10px;padding:0.65rem 0.75rem;margin-bottom:0.45rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:space-between;text-align:left;">
+                        <span>5. 백업/복원</span><i data-lucide="chevron-down" style="width:15px;height:15px;"></i>
                     </button>
                     <div class="manual-topic-content" style="display:none;margin:-0.1rem 0 0.65rem;padding:0 0.75rem 0.55rem;color:var(--text-muted);">
                         <p class="manual-summary">현재 데이터를 저장해두거나 다른 기기에서 복원할 수 있습니다.</p>
                         <p class="manual-flow">백업 버튼 선택 &gt; 날짜별 복원 지점 생성 &gt; 필요 시 <strong>[내보내기]</strong>로 파일 저장 &gt; 다른 기기에서 <strong>[가져오기]</strong></p>
                     </div>
                     <button type="button" class="manual-topic-btn" style="width:100%;background:var(--surface-color);color:var(--text-main);border:1px solid var(--border-color);border-radius:10px;padding:0.65rem 0.75rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:space-between;text-align:left;">
-                        <span>5. 가족 초대하기</span><i data-lucide="chevron-down" style="width:15px;height:15px;"></i>
+                        <span>6. 가족 초대하기</span><i data-lucide="chevron-down" style="width:15px;height:15px;"></i>
                     </button>
                     <div class="manual-topic-content" style="display:none;margin:0.35rem 0 0.65rem;padding:0 0.75rem 0.55rem;color:var(--text-muted);">
                         <p class="manual-summary">가족과 함께 같은 물건 목록을 관리할 수 있는 기능입니다.</p>
                         <p class="manual-flow">설정 &gt; 계정 관리 &gt; <strong>[카카오톡으로 가족 초대하기]</strong> &gt; 초대 메시지 전송 &gt; 가족이 링크 접속 후 로그인</p>
                     </div>
                     <button type="button" class="manual-topic-btn" style="width:100%;background:var(--surface-color);color:var(--text-main);border:1px solid var(--border-color);border-radius:10px;padding:0.65rem 0.75rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:space-between;text-align:left;">
-                        <span>6. 앱 설치방법</span><i data-lucide="chevron-down" style="width:15px;height:15px;"></i>
+                        <span>7. 앱 설치방법</span><i data-lucide="chevron-down" style="width:15px;height:15px;"></i>
                     </button>
                     <div class="manual-topic-content" style="display:none;margin:0.35rem 0 0;padding:0 0.75rem 0.15rem;color:var(--text-muted);">
                         <p class="manual-summary">자주 사용하는 기기에 앱처럼 설치해 빠르게 열 수 있습니다.</p>
@@ -259,7 +266,7 @@
                 <h3 style="font-size:0.9rem;color:var(--text-muted);margin:0 0 0.7rem;">6. 앱 업데이트</h3>
                 <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
                     <span style="font-size:0.84rem;color:var(--text-muted);font-weight:700;">현재 버전</span>
-                    <span id="settingsVersionText" style="font-size:0.84rem;color:var(--text-main);font-weight:800;">v26</span>
+                    <span id="settingsVersionText" style="font-size:0.84rem;color:var(--text-main);font-weight:800;">v27</span>
                 </div>
                 <p id="settingsVersionStatus" style="margin:0.35rem 0 0;color:var(--text-muted);font-size:0.72rem;line-height:1.4;text-align:right;">최신버전입니다</p>
                 <button id="btnOpenUpdateDetails" style="width:100%;margin-top:0.8rem;background:var(--bg-color);color:var(--text-main);border:1px solid var(--border-color);padding:0.65rem;border-radius:10px;font-weight:700;cursor:pointer;font-size:0.82rem;display:flex;align-items:center;justify-content:center;gap:5px;">
@@ -291,11 +298,11 @@
                         <h3 style="margin:0;font-size:1.35rem;color:#202124;font-weight:800;">최신 업데이트 사항</h3>
                         <span style="width:9px;height:9px;background:#2563eb;border-radius:50%;display:inline-block;"></span>
                     </div>
-                    <p id="latestUpdateMeta" style="margin:0 0 1.1rem;color:#5f6368;font-size:0.94rem;">v26 · 2026.05.20.</p>
+                    <p id="latestUpdateMeta" style="margin:0 0 1.1rem;color:#5f6368;font-size:0.94rem;">v27 · 2026.05.20.</p>
                     <div id="latestUpdateItems" style="color:#202124;font-size:1rem;line-height:1.65;">
-                        <p style="margin:0 0 0.55rem;">• 메인 화면 제목 위치 조정</p>
-                        <p style="margin:0 0 0.55rem;">• 2페이지 제목 글씨체 복구</p>
-                        <p style="margin:0;">• 2페이지 검색 입력 버튼 추가</p>
+                        <p style="margin:0 0 0.55rem;">• 사용설명서 항목 정리</p>
+                        <p style="margin:0 0 0.55rem;">• 세부 구역 추가 안내 보강</p>
+                        <p style="margin:0;">• 물건 등록 입력칸 간격 조정</p>
                     </div>
                 </section>
                 <section style="padding:1.6rem 1.4rem;background:#ffffff;">
@@ -347,7 +354,7 @@
             <i data-lucide="chevron-right" style="width:28px; height:28px;"></i>
         </button>
     </div>
-    <script src="js/firebase-sync.js?v=26"></script>
-    <script src="js/script.js?v=26"></script>
+    <script src="js/firebase-sync.js?v=27"></script>
+    <script src="js/script.js?v=27"></script>
 </body>
 </html>

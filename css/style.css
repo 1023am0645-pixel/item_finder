@@ -313,6 +313,11 @@ header {
   color: var(--text-muted);
 }
 
+.manual-topic-btn,
+.rooms-manual-topic-btn {
+  margin-bottom: 0.45rem !important;
+}
+
 .manual-summary {
   margin: 0 0 0.42rem;
   color: var(--text-main);
@@ -481,6 +486,24 @@ header {
   margin-top: -1rem;
 }
 
+.add-details {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.add-details .form-row {
+  gap: 0.55rem;
+}
+
+.add-details .memo-input {
+  min-height: 58px;
+}
+
+.add-details #zoneSelectRow {
+  margin-top: 0 !important;
+}
+
 .long-search-input {
   position: relative;
   width: 100%;
@@ -596,7 +619,7 @@ header {
 .save-btn {
   width: 100%;
   padding: 1.1rem;
-  margin-top: 1rem;
+  margin-top: 0;
   background: var(--primary-color);
   color: white;
   border: none;

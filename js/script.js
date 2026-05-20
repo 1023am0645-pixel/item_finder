@@ -1,6 +1,15 @@
 document.addEventListener('DOMContentLoaded', () => {
     const APP_UPDATE_HISTORY = [
         {
+            version: 'v27',
+            date: '2026.05.20.',
+            items: [
+                '사용설명서 항목 정리',
+                '세부 구역 추가 안내 보강',
+                '물건 등록 입력칸 간격 조정'
+            ]
+        },
+        {
             version: 'v26',
             date: '2026.05.20.',
             items: [
