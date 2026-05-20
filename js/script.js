@@ -1,6 +1,15 @@
 document.addEventListener('DOMContentLoaded', () => {
     const APP_UPDATE_HISTORY = [
         {
+            version: 'v25',
+            date: '2026.05.20.',
+            items: [
+                '닉네임 수정 팝업 디자인 개선',
+                '카카오톡 초대 버튼과 설정 하위 메뉴 정리',
+                '앱 제목 폰트와 사용설명서 가독성 개선'
+            ]
+        },
+        {
             version: 'v24',
             date: '2026.05.20.',
             items: [
@@ -298,6 +307,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const itemNameInput = document.getElementById('itemName');
     const roomSelectBtn = document.getElementById('btnSelectRoom');
 
+    function escapeHTML(value) {
+        return String(value || '').replace(/[&<>"']/g, char => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        }[char]));
+    }
+
     function updateAppTitle() {
         const nick = localStorage.getItem('kc_nickname');
         const titles = document.querySelectorAll('.app-main-title');
@@ -317,12 +336,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if(theme === 'dark' && !isInOverlay) baseTextColor = '#e2e8f0';
 
             if (nick && !isInOverlay && !isRoomsPage) {
-                t.innerHTML = `<span style="font-family:'Nanum Pen Script', cursive; color:${baseTextColor}; font-weight:400;">${nick} 물건어디</span><span style="color:${qColor}; font-family:'Nanum Pen Script', cursive; margin-left:4px; font-weight:400; font-size:1.15em; display:inline-block; transform:translateY(1px);">?</span>`;
+                t.innerHTML = `<span class="app-title-owner" style="color:${baseTextColor};"><span class="app-title-nickname">${escapeHTML(nick)}</span><span class="app-title-particle"> 의 </span></span><span class="app-title-brand" style="color:${baseTextColor};">물건어디</span><span class="app-title-question" style="color:${qColor}; margin-left:4px; font-size:1.02em; display:inline-block; transform:translateY(1px);">?</span>`;
             } else {
                 if (isRoomsPage) {
-                    t.innerHTML = `<span style="font-family:'Nanum Pen Script', cursive; color:var(--text-main); font-weight:400; opacity:0.7;">Home item list</span>`;
+                    t.innerHTML = `<span class="rooms-title-brand">Home item list</span>`;
                 } else {
-                    t.innerHTML = `<span style="font-family:'Nanum Pen Script', cursive; color:${baseTextColor}; font-weight:400;">물건어디</span><span style="color:${qColor}; font-family:'Nanum Pen Script', cursive; margin-left:4px; font-weight:400; font-size:1.15em; display:inline-block; transform:translateY(1px);">?</span>`;
+                    t.innerHTML = `<span class="app-title-brand" style="color:${baseTextColor};">물건어디</span><span class="app-title-question" style="color:${qColor}; margin-left:4px; font-size:1.02em; display:inline-block; transform:translateY(1px);">?</span>`;
                 }
             }
         });
@@ -447,6 +466,58 @@ document.addEventListener('DOMContentLoaded', () => {
         await fallbackShareInvite(message, inviteUrl);
     }
 
+    function openNicknameDialog(currentNick, onSave) {
+        const overlay = document.createElement('div');
+        overlay.className = 'nickname-dialog-overlay';
+        overlay.innerHTML = `
+            <div class="nickname-dialog" role="dialog" aria-modal="true" aria-labelledby="nicknameDialogTitle">
+                <button type="button" class="nickname-dialog-close" aria-label="닫기"><i data-lucide="x" style="width:18px;height:18px;"></i></button>
+                <div class="nickname-dialog-icon"><i data-lucide="sparkles" style="width:22px;height:22px;"></i></div>
+                <h3 id="nicknameDialogTitle">닉네임 수정</h3>
+                <p>앱에서 보여질 이름을 입력해주세요.</p>
+                <input type="text" id="nicknameDialogInput" maxlength="16" value="${escapeHTML(currentNick)}" placeholder="닉네임">
+                <div class="nickname-dialog-actions">
+                    <button type="button" class="nickname-dialog-cancel">취소</button>
+                    <button type="button" class="nickname-dialog-save">저장</button>
+                </div>
+            </div>
+        `;
+
+        const close = () => {
+            document.removeEventListener('keydown', handleKeydown);
+            overlay.remove();
+        };
+        const save = () => {
+            const input = overlay.querySelector('#nicknameDialogInput');
+            const nextNick = input.value.trim();
+            if (!nextNick) {
+                input.focus();
+                return;
+            }
+            onSave(nextNick);
+            close();
+        };
+        const handleKeydown = event => {
+            if (event.key === 'Escape') close();
+            if (event.key === 'Enter') save();
+        };
+
+        overlay.addEventListener('click', event => {
+            if (event.target === overlay) close();
+        });
+        overlay.querySelector('.nickname-dialog-close').addEventListener('click', close);
+        overlay.querySelector('.nickname-dialog-cancel').addEventListener('click', close);
+        overlay.querySelector('.nickname-dialog-save').addEventListener('click', save);
+        document.addEventListener('keydown', handleKeydown);
+        document.body.appendChild(overlay);
+        if (window.lucide) lucide.createIcons();
+        setTimeout(() => {
+            const input = overlay.querySelector('#nicknameDialogInput');
+            input.focus();
+            input.select();
+        }, 30);
+    }
+
     if (btnInviteFamily) {
         btnInviteFamily.addEventListener('click', async () => {
             btnInviteFamily.disabled = true;
@@ -516,13 +587,12 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
         btnEditNickname.addEventListener('click', () => {
-            let nick = prompt('새로운 닉네임을 입력해주세요:', localStorage.getItem('kc_nickname') || '');
-            if (nick && nick.trim() !== '') {
-                localStorage.setItem('kc_nickname', nick.trim());
+            openNicknameDialog(localStorage.getItem('kc_nickname') || '', nick => {
+                localStorage.setItem('kc_nickname', nick);
                 updateAppTitle();
                 showToast('닉네임이 변경되었습니다.');
-                if (window.updateNicknameInCloud) window.updateNicknameInCloud(nick.trim()).catch(() => {});
-            }
+                if (window.updateNicknameInCloud) window.updateNicknameInCloud(nick).catch(() => {});
+            });
         });
         btnKakaoLogout.addEventListener('click', () => {
             if(confirm('정말 로그아웃 하시겠습니까? 닉네임과 로그인 정보가 초기화됩니다.')) {

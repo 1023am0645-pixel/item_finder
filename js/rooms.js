@@ -48,6 +48,16 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     applyFloatingButtonTheme();
 
+    function escapeHTML(value) {
+        return String(value || '').replace(/[&<>"']/g, char => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        }[char]));
+    }
+
     // Update title logic
     function updateAppTitle() {
         const titles = document.querySelectorAll('.app-main-title');
@@ -59,7 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
         else if(theme === 'positano') qColor = '#f59e0b';
 
         titles.forEach(t => {
-            t.innerHTML = `<span style="font-family:'Nanum Pen Script', cursive; color:var(--text-main); font-weight:400;">Home item list</span>`;
+            t.innerHTML = `<span class="rooms-title-brand">Home item list</span>`;
         });
         
         // Update search bar wrapper color
@@ -188,6 +198,58 @@ document.addEventListener('DOMContentLoaded', () => {
         await fallbackShareInvite(message, inviteUrl);
     }
 
+    function openNicknameDialog(currentNick, onSave) {
+        const overlay = document.createElement('div');
+        overlay.className = 'nickname-dialog-overlay';
+        overlay.innerHTML = `
+            <div class="nickname-dialog" role="dialog" aria-modal="true" aria-labelledby="nicknameDialogTitle">
+                <button type="button" class="nickname-dialog-close" aria-label="닫기"><i data-lucide="x" style="width:18px;height:18px;"></i></button>
+                <div class="nickname-dialog-icon"><i data-lucide="sparkles" style="width:22px;height:22px;"></i></div>
+                <h3 id="nicknameDialogTitle">닉네임 수정</h3>
+                <p>앱에서 보여질 이름을 입력해주세요.</p>
+                <input type="text" id="nicknameDialogInput" maxlength="16" value="${escapeHTML(currentNick)}" placeholder="닉네임">
+                <div class="nickname-dialog-actions">
+                    <button type="button" class="nickname-dialog-cancel">취소</button>
+                    <button type="button" class="nickname-dialog-save">저장</button>
+                </div>
+            </div>
+        `;
+
+        const close = () => {
+            document.removeEventListener('keydown', handleKeydown);
+            overlay.remove();
+        };
+        const save = () => {
+            const input = overlay.querySelector('#nicknameDialogInput');
+            const nextNick = input.value.trim();
+            if (!nextNick) {
+                input.focus();
+                return;
+            }
+            onSave(nextNick);
+            close();
+        };
+        const handleKeydown = event => {
+            if (event.key === 'Escape') close();
+            if (event.key === 'Enter') save();
+        };
+
+        overlay.addEventListener('click', event => {
+            if (event.target === overlay) close();
+        });
+        overlay.querySelector('.nickname-dialog-close').addEventListener('click', close);
+        overlay.querySelector('.nickname-dialog-cancel').addEventListener('click', close);
+        overlay.querySelector('.nickname-dialog-save').addEventListener('click', save);
+        document.addEventListener('keydown', handleKeydown);
+        document.body.appendChild(overlay);
+        if (window.lucide) lucide.createIcons();
+        setTimeout(() => {
+            const input = overlay.querySelector('#nicknameDialogInput');
+            input.focus();
+            input.select();
+        }, 30);
+    }
+
     if (btnOpenRoomsSettings) btnOpenRoomsSettings.addEventListener('click', openRoomsSettings);
     if (btnCloseRoomsSettings) btnCloseRoomsSettings.addEventListener('click', () => { roomsSettingsOverlay.style.display = 'none'; });
     if (btnToggleRoomsAccountActions && roomsAccountActionList) {
@@ -197,13 +259,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (btnRoomsEditNickname) {
         btnRoomsEditNickname.addEventListener('click', () => {
-            const nick = prompt('새로운 닉네임을 입력해주세요:', localStorage.getItem('kc_nickname') || '');
-            if (nick && nick.trim()) {
-                localStorage.setItem('kc_nickname', nick.trim());
-                if (roomsSettingsNicknameDisplay) roomsSettingsNicknameDisplay.textContent = nick.trim();
-                if (window.updateNicknameInCloud) window.updateNicknameInCloud(nick.trim()).catch(() => {});
+            openNicknameDialog(localStorage.getItem('kc_nickname') || '', nick => {
+                localStorage.setItem('kc_nickname', nick);
+                if (roomsSettingsNicknameDisplay) roomsSettingsNicknameDisplay.textContent = nick;
+                if (window.updateNicknameInCloud) window.updateNicknameInCloud(nick).catch(() => {});
                 showToast('닉네임이 변경되었습니다.');
-            }
+            });
         });
     }
     if (btnRoomsInviteFamily) {
@@ -213,7 +274,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const myNick = localStorage.getItem('kc_nickname') || '가족';
             const code = window.createInviteCode ? await window.createInviteCode() : null;
             btnRoomsInviteFamily.disabled = false;
-            btnRoomsInviteFamily.textContent = '카카오톡으로 가족 초대하기';
+            btnRoomsInviteFamily.innerHTML = `<svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:#000;"><path d="M12 3c-5.52 0-10 3.58-10 8 0 2.86 1.83 5.37 4.6 6.78-.3.97-1.12 3.65-1.14 3.75-.03.14.05.21.16.2.14-.02 3.86-2.58 5.34-3.6.35.04.7.07 1.04.07 5.52 0 10-3.58 10-8s-4.48-8-10-8z"/></svg> 카카오톡으로 가족 초대하기`;
             if (!code) { showToast('초대 코드 생성에 실패했어요.'); return; }
             try {
                 await shareInviteToKakao(code, myNick);

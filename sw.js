@@ -1,4 +1,4 @@
-const CACHE_NAME = 'item-finder-v24';
+const CACHE_NAME = 'item-finder-v25';
 const STATIC_ASSETS = [
   './css/style.css',
   './js/script.js',
@@ -8,7 +8,8 @@ const STATIC_ASSETS = [
   './manifest.json',
   './assets/hero.png',
   './assets/alps.jpg',
-  './assets/positano.jpg'
+  './assets/positano.jpg',
+  './assets/fonts/Cafe24Ssurround.woff'
 ];
 
 // 설치: CSS/JS/이미지만 캐시 (HTML은 제외)
