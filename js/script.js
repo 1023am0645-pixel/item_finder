@@ -1,6 +1,14 @@
 document.addEventListener('DOMContentLoaded', () => {
     const APP_UPDATE_HISTORY = [
         {
+            version: 'v28',
+            date: '2026.05.20.',
+            items: [
+                '다크테마 선택 글자색 개선',
+                '백업/복원 버튼명 정리'
+            ]
+        },
+        {
             version: 'v27',
             date: '2026.05.20.',
             items: [
@@ -112,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
             version: 'v15',
             date: '2026.05.18.',
             items: [
-                '로컬 백업 파일 내보내기/가져오기 추가',
+                '로컬 백업 파일 백업하기/복원하기 추가',
                 '백업 파일에 물건, 방, 구역, 테마 정보 포함',
                 '앱 접속 시 최신 업데이트 안내 표시'
             ]
@@ -750,7 +758,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <span style="font-size:0.72rem;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">백업자: ${author}</span>
                 </div>
                 <div style="display:flex;gap:4px;align-items:center;">
-                    <button class="restore-backup-btn" data-index="${idx}" style="background:var(--primary-color);color:white;border:none;border-radius:6px;padding:4px 8px;font-size:0.8rem;cursor:pointer;">복원</button>
+                    <button class="restore-backup-btn" data-index="${idx}" style="background:var(--primary-color);color:var(--primary-contrast);border:none;border-radius:6px;padding:4px 8px;font-size:0.8rem;cursor:pointer;">복원</button>
                     <button class="delete-backup-btn" data-index="${idx}" style="background:transparent;color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:6px;padding:4px 6px;font-size:0.8rem;cursor:pointer;line-height:1;"><i data-lucide="x" style="width:14px;height:14px;"></i></button>
                 </div>`;
             listContainer.appendChild(row);

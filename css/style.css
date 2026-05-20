@@ -3,6 +3,7 @@
   --owner-font: 'Nanum Pen Script', cursive;
   --primary-color: #ff8c42; /* 따뜻한 느낌의 오렌지 포인트 */
   --primary-hover: #ff751f;
+  --primary-contrast: #ffffff;
   --bg-color: #f8fafc;
   --surface-color: #ffffff;
   --text-main: #1e293b;
@@ -44,6 +45,7 @@
   --border-color: #334155;
   --primary-color: #fef08a; /* 파스텔톤 노란색 */
   --primary-hover: #fde047;
+  --primary-contrast: #111827;
 }
 [data-theme="alps"] {
   --bg-color: #e0f2fe;
@@ -57,6 +59,7 @@
   --border-color: rgba(186, 230, 253, 0.5);
   --primary-color: #0ea5e9;
   --primary-hover: #0284c7;
+  --primary-contrast: #ffffff;
 }
 [data-theme="positano"] {
   --bg-color: #fffbeb;
@@ -70,6 +73,7 @@
   --border-color: rgba(253, 224, 71, 0.5);
   --primary-color: #f59e0b;
   --primary-hover: #d97706;
+  --primary-contrast: #ffffff;
   --settings-section-label-color: #314a46;
   --settings-submenu-bg: #ffffff;
   --settings-submenu-border: rgba(49, 74, 70, 0.14);
@@ -293,7 +297,7 @@ header {
   border: none;
   border-radius: 10px;
   background: var(--primary-color);
-  color: #ffffff;
+  color: var(--primary-contrast);
   font-size: 0.84rem;
   font-weight: 800;
   cursor: pointer;
@@ -621,7 +625,7 @@ header {
   padding: 1.1rem;
   margin-top: 0;
   background: var(--primary-color);
-  color: white;
+  color: var(--primary-contrast);
   border: none;
   border-radius: 14px;
   font-size: 1.05rem;
@@ -679,7 +683,7 @@ header {
 
 .room-btn.selected {
   background: var(--primary-color);
-  color: #fff;
+  color: var(--primary-contrast);
   border-color: var(--primary-color);
   box-shadow: 0 4px 12px rgba(255, 140, 66, 0.2);
 }

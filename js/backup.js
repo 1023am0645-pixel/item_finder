@@ -122,13 +122,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             card.innerHTML = `
                 <div style="display:flex; align-items:center; gap:8px; flex-wrap:nowrap; overflow:hidden;">
-                    ${index === 0 ? '<span style="flex-shrink:0; background:var(--primary-color);color:white;font-size:0.7rem;padding:2px 7px;border-radius:10px;white-space:nowrap;">최근</span>' : ''}
+                    ${index === 0 ? '<span style="flex-shrink:0; background:var(--primary-color);color:var(--primary-contrast);font-size:0.7rem;padding:2px 7px;border-radius:10px;white-space:nowrap;">최근</span>' : ''}
                     <span style="font-weight:700; color:var(--text-main); font-size:1rem; white-space:nowrap;">${localDateStr}</span>
                     <span style="color:var(--text-muted); font-size:0.85rem; white-space:nowrap; margin-left:auto; flex-shrink:0;"><i data-lucide="box" style="width:14px;height:14px;vertical-align:middle;margin-right:2px;"></i>${b.count}개</span>
                 </div>
                 <div style="font-size:0.78rem;color:var(--text-muted);margin-top:-0.35rem;">백업자: ${author}</div>
                 <div style="display:flex; gap:0.5rem;">
-                    <button class="btn-restore" style="flex:1; background:var(--primary-color); color:white; border:none; padding:0.6rem 0; border-radius:12px; font-weight:600; cursor:pointer; font-size:0.9rem;"><i data-lucide="download" style="width:15px;height:15px;vertical-align:middle;margin-right:4px;"></i>이 상태로 복구</button>
+                    <button class="btn-restore" style="flex:1; background:var(--primary-color); color:var(--primary-contrast); border:none; padding:0.6rem 0; border-radius:12px; font-weight:600; cursor:pointer; font-size:0.9rem;"><i data-lucide="download" style="width:15px;height:15px;vertical-align:middle;margin-right:4px;"></i>이 상태로 복구</button>
                     <button class="btn-delete" style="flex-shrink:0; background:rgba(239,68,68,0.1); color:#ef4444; border:none; padding:0.6rem 1rem; border-radius:12px; font-weight:600; cursor:pointer;"><i data-lucide="trash-2" style="width:15px;height:15px;vertical-align:middle;"></i></button>
                 </div>
             `;

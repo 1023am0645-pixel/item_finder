@@ -620,7 +620,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateViewMode() {
-        const activeStyle = { bg: 'var(--primary-color)', color: 'white' };
+        const activeStyle = { bg: 'var(--primary-color)', color: 'var(--primary-contrast)' };
         const inactiveStyle = { bg: 'transparent', color: 'var(--text-muted)' };
 
         if(viewCompactBtn) {

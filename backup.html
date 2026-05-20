@@ -7,7 +7,7 @@
     <title>물건어디 - 백업 센터</title>
     <link rel="manifest" href="manifest.json">
     <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=27">
+    <link rel="stylesheet" href="css/style.css?v=28">
     <script src="https://unpkg.com/lucide@latest"></script>
     <script>
         if (localStorage.getItem('kc_logged_in') !== 'true') {
@@ -29,11 +29,11 @@
         <section class="form-section" style="margin-top: 0; flex: 1;">
             <h2 class="section-title"><i data-lucide="file-down" style="vertical-align: middle; margin-right: 6px;"></i>로컬 백업 파일</h2>
             <div style="display:flex;gap:0.6rem;margin:1rem 0 1.6rem;flex-wrap:wrap;">
-                <button id="btnExportLocalBackup" style="flex:1;min-width:140px;background:var(--primary-color);color:white;border:none;padding:0.8rem 1rem;border-radius:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
-                    <i data-lucide="download" style="width:17px;height:17px;"></i>내보내기
+                <button id="btnExportLocalBackup" style="flex:1;min-width:140px;background:var(--primary-color);color:var(--primary-contrast);border:none;padding:0.8rem 1rem;border-radius:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
+                    <i data-lucide="download" style="width:17px;height:17px;"></i>백업하기
                 </button>
                 <button id="btnImportLocalBackup" style="flex:1;min-width:140px;background:var(--bg-color);color:var(--text-main);border:1px solid var(--border-color);padding:0.8rem 1rem;border-radius:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
-                    <i data-lucide="upload" style="width:17px;height:17px;"></i>가져오기
+                    <i data-lucide="upload" style="width:17px;height:17px;"></i>복원하기
                 </button>
                 <input type="file" id="localBackupFileInput" accept="application/json,.json" style="display:none;">
             </div>
@@ -49,7 +49,7 @@
     <!-- Toast 알림 컨테이너 -->
     <div id="toastContainer" class="toast-container"></div>
     <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');</script>
-    <script src="js/firebase-sync.js?v=27"></script>
-    <script src="js/backup.js?v=27"></script>
+    <script src="js/firebase-sync.js?v=28"></script>
+    <script src="js/backup.js?v=28"></script>
 </body>
 </html>
