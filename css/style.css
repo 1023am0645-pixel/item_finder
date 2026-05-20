@@ -267,7 +267,45 @@ header {
 }
 
 .rooms-title-brand {
+  font-family: var(--owner-font);
+  font-weight: 400;
   color: var(--text-main);
+  opacity: 0.72;
+}
+
+.main-page-header {
+  margin-top: 1.65rem;
+}
+
+.main-page-header .main-subtitle-row {
+  margin-top: 0.42rem !important;
+  margin-bottom: 0.8rem !important;
+}
+
+.global-search-submit {
+  position: absolute;
+  z-index: 3;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 38px;
+  min-width: 64px;
+  border: none;
+  border-radius: 10px;
+  background: var(--primary-color);
+  color: #ffffff;
+  font-size: 0.84rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  box-shadow: 0 4px 10px rgba(255, 140, 66, 0.24);
+}
+
+.global-search-submit:active {
+  transform: translateY(-50%) scale(0.98);
 }
 
 .manual-topic-content,
@@ -713,6 +751,9 @@ header {
     padding: 1.5rem 1rem;
     box-shadow: none;
     border-radius: 0;
+  }
+  .main-page-header {
+    margin-top: 1.85rem;
   }
   .form-row {
     flex-direction: column;

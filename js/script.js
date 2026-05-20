@@ -1,6 +1,15 @@
 document.addEventListener('DOMContentLoaded', () => {
     const APP_UPDATE_HISTORY = [
         {
+            version: 'v26',
+            date: '2026.05.20.',
+            items: [
+                '메인 화면 제목 위치 조정',
+                '2페이지 제목 글씨체 복구',
+                '2페이지 검색 입력 버튼 추가'
+            ]
+        },
+        {
             version: 'v25',
             date: '2026.05.20.',
             items: [

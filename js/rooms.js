@@ -553,12 +553,21 @@ document.addEventListener('DOMContentLoaded', () => {
     let pickedRooms = null; // null = 미초기화, Set으로 선택된 방 관리
 
     const globalSearchInput = document.getElementById('globalSearchInput');
+    const btnGlobalSearchSubmit = document.getElementById('btnGlobalSearchSubmit');
+    function applyGlobalSearch() {
+        if (!globalSearchInput) return;
+        searchQuery = globalSearchInput.value.toLowerCase().trim();
+        renderRoomsContent();
+    }
     if (globalSearchInput) {
         globalSearchInput.addEventListener('input', (e) => {
-            searchQuery = e.target.value.toLowerCase().trim();
-            renderRoomsContent();
+            if (e.target.value.trim() === '') applyGlobalSearch();
+        });
+        globalSearchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') applyGlobalSearch();
         });
     }
+    if (btnGlobalSearchSubmit) btnGlobalSearchSubmit.addEventListener('click', applyGlobalSearch);
 
     const viewCompactBtn = document.getElementById('viewCompactBtn');
     const viewDetailBtn = document.getElementById('viewDetailBtn');
