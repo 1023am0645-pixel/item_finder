@@ -17,9 +17,142 @@ const headers = {
 let currentUserId = null;
 let currentGroupId = null;
 
+const SUPPORT_OPENCHAT_URL = '';
+const SUPPORT_CHATBOT_URL = '';
+const SUPPORT_CONTACT_LABEL = '물건어디 개발자';
+
 // 랜덤 ID 생성
 function generateId(length = 12) {
     return Math.random().toString(36).substring(2, 2 + length).toUpperCase();
+}
+
+function getCurrentAppVersion() {
+    if (window.ITEM_FINDER_APP_VERSION) return window.ITEM_FINDER_APP_VERSION;
+    const scriptTag = document.querySelector('script[src*="js/script.js"], script[src*="js/rooms.js"], script[src*="js/backup.js"]');
+    if (!scriptTag) return 'unknown';
+    try {
+        const url = new URL(scriptTag.getAttribute('src'), window.location.href);
+        const version = url.searchParams.get('v');
+        return version ? `v${version}` : 'unknown';
+    } catch(e) {
+        return 'unknown';
+    }
+}
+
+function getSupportContext() {
+    const items = JSON.parse(localStorage.getItem('itemFinder_data') || '[]');
+    const rooms = JSON.parse(localStorage.getItem('itemFinder_rooms') || '[]');
+    const zones = JSON.parse(localStorage.getItem('itemFinder_zones') || '{}');
+    return {
+        nickname: localStorage.getItem('kc_nickname') || '회원',
+        userId: localStorage.getItem('kc_user_id') || currentUserId || '',
+        groupId: localStorage.getItem('kc_group_id') || currentGroupId || '',
+        appVersion: getCurrentAppVersion(),
+        page: window.location.pathname.split('/').pop() || 'index.html',
+        itemCount: Array.isArray(items) ? items.length : 0,
+        roomCount: Array.isArray(rooms) ? rooms.length : 0,
+        zoneCount: zones && typeof zones === 'object' ? Object.values(zones).reduce((sum, list) => sum + (Array.isArray(list) ? list.length : 0), 0) : 0,
+        theme: localStorage.getItem('itemFinder_theme') || 'light',
+        userAgent: navigator.userAgent || '',
+        createdAt: new Date().toLocaleString('ko-KR')
+    };
+}
+
+function buildSupportReport() {
+    const ctx = getSupportContext();
+    return [
+        '[물건어디 문의]',
+        '',
+        '1. 문의 종류: 오류 / 개선 요청 / 사용 질문 중 선택',
+        '2. 어떤 화면에서 발생했나요?:',
+        '3. 어떤 문제가 있었나요?:',
+        '4. 가능하면 재현 순서:',
+        '',
+        '[자동 포함 정보]',
+        `- 닉네임: ${ctx.nickname}`,
+        `- 사용자 ID: ${ctx.userId || '없음'}`,
+        `- 그룹 ID: ${ctx.groupId || '없음'}`,
+        `- 앱 버전: ${ctx.appVersion}`,
+        `- 현재 화면: ${ctx.page}`,
+        `- 물건/방/구역 수: ${ctx.itemCount}개 / ${ctx.roomCount}개 / ${ctx.zoneCount}개`,
+        `- 테마: ${ctx.theme}`,
+        `- 작성 시각: ${ctx.createdAt}`,
+        `- 기기 정보: ${ctx.userAgent}`
+    ].join('\n');
+}
+
+async function copyText(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+        return true;
+    }
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.left = '-9999px';
+    document.body.appendChild(textarea);
+    textarea.select();
+    const copied = document.execCommand('copy');
+    textarea.remove();
+    return copied;
+}
+
+async function shareSupportReport() {
+    const report = buildSupportReport();
+    const directUrl = SUPPORT_CHATBOT_URL || SUPPORT_OPENCHAT_URL;
+    if (directUrl) {
+        await copyText(report).catch(() => {});
+        window.open(directUrl, '_blank', 'noopener');
+        return 'opened';
+    }
+    if (navigator.share) {
+        await navigator.share({
+            title: '물건어디 문의',
+            text: report
+        });
+        return 'shared';
+    }
+    await copyText(report);
+    return 'copied';
+}
+
+async function recordUsageEvent(eventType = 'visit', options = {}) {
+    if (!currentUserId && localStorage.getItem('kc_user_id')) currentUserId = localStorage.getItem('kc_user_id');
+    if (!currentGroupId && localStorage.getItem('kc_group_id')) currentGroupId = localStorage.getItem('kc_group_id');
+    if (!currentUserId) return false;
+
+    const throttleKey = `itemFinder_usage_${eventType}`;
+    const now = Date.now();
+    const lastAt = Number(sessionStorage.getItem(throttleKey) || 0);
+    if (!options.force && now - lastAt < 30 * 60 * 1000) return true;
+    sessionStorage.setItem(throttleKey, String(now));
+
+    const ctx = getSupportContext();
+    const eventHeaders = { ...headers, Prefer: 'return=minimal' };
+    try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/usage_events`, {
+            method: 'POST',
+            headers: eventHeaders,
+            body: JSON.stringify({
+                event_type: eventType,
+                user_id: ctx.userId,
+                nickname: ctx.nickname,
+                group_id: ctx.groupId || null,
+                app_version: ctx.appVersion,
+                page: ctx.page,
+                item_count: ctx.itemCount,
+                room_count: ctx.roomCount,
+                zone_count: ctx.zoneCount,
+                user_agent: ctx.userAgent,
+                created_at: new Date().toISOString()
+            })
+        });
+        return res.ok;
+    } catch(e) {
+        console.warn('[Supabase] 사용 기록 저장 실패:', e.message);
+        return false;
+    }
 }
 
 // 사용자 ID 설정 (카카오 로그인 후 호출)
@@ -58,6 +191,7 @@ async function getOrCreateGroup() {
             if (data[0].nickname && !localStorage.getItem('kc_nickname')) {
                 localStorage.setItem('kc_nickname', data[0].nickname);
             }
+            recordUsageEvent('visit').catch(() => {});
             return currentGroupId;
         }
 
@@ -96,6 +230,7 @@ async function getOrCreateGroup() {
 
         currentGroupId = newGroupId;
         localStorage.setItem('kc_group_id', currentGroupId);
+        recordUsageEvent('signup', { force: true }).catch(() => {});
         return currentGroupId;
 
     } catch (e) {
@@ -147,6 +282,7 @@ async function joinGroup(inviteCode) {
 
         currentGroupId = group_id;
         localStorage.setItem('kc_group_id', currentGroupId);
+        recordUsageEvent('join_group', { force: true }).catch(() => {});
         return true;
 
     } catch (e) {
@@ -172,6 +308,7 @@ async function createInviteCode() {
                 expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
             })
         });
+        recordUsageEvent('create_invite').catch(() => {});
         return code;
     } catch (e) {
         console.warn('[Supabase] 초대 코드 생성 실패:', e.message);
@@ -311,6 +448,15 @@ window.createInviteCode = createInviteCode;
 window.joinGroup = joinGroup;
 window.getOrCreateGroup = getOrCreateGroup;
 window.updateNicknameInCloud = updateNicknameInCloud;
+window.recordUsageEvent = recordUsageEvent;
+window.itemFinderSupport = {
+    contactLabel: SUPPORT_CONTACT_LABEL,
+    openChatUrl: SUPPORT_OPENCHAT_URL,
+    chatbotUrl: SUPPORT_CHATBOT_URL,
+    buildReport: buildSupportReport,
+    copyReport: () => copyText(buildSupportReport()),
+    shareReport: shareSupportReport
+};
 
 // 저장된 사용자/그룹 ID 복원
 const storedUserId = localStorage.getItem('kc_user_id');

@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#ff8c42">
+    <title>물건어디 - 개발자 관리</title>
+    <link rel="manifest" href="manifest.json">
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css?v=29">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Pretendard', sans-serif; }
+        .developer-card {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1rem;
+            box-shadow: var(--shadow-sm);
+        }
+        .developer-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 0.8rem;
+            margin: 1rem 0;
+        }
+        .metric-value {
+            color: var(--text-main);
+            font-size: 1.5rem;
+            font-weight: 900;
+        }
+        .metric-label {
+            color: var(--text-muted);
+            font-size: 0.78rem;
+            font-weight: 700;
+            margin-top: 0.2rem;
+        }
+        .developer-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+        .developer-table th,
+        .developer-table td {
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 0.65rem 0.45rem;
+            text-align: left;
+            vertical-align: top;
+        }
+        .developer-table th {
+            color: var(--text-muted);
+            font-size: 0.74rem;
+            white-space: nowrap;
+        }
+        .developer-input {
+            width: 100%;
+            background: var(--bg-color);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            font-size: 0.95rem;
+            padding: 0.8rem;
+            outline: none;
+        }
+        .developer-actions {
+            display: flex;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+            margin-top: 0.8rem;
+        }
+        .developer-actions button {
+            flex: 1;
+            min-width: 130px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 800;
+            padding: 0.75rem 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header class="main-page-header">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-top:1rem;">
+                <button onclick="location.href='index.html'" style="background:var(--bg-color);border:1px solid var(--border-color);color:var(--text-main);cursor:pointer;display:flex;align-items:center;padding:0.55rem 1rem;border-radius:20px;font-size:0.9rem;font-weight:700;">
+                    <i data-lucide="arrow-left" style="margin-right:6px;width:17px;height:17px;"></i>홈
+                </button>
+                <strong style="color:var(--text-muted);font-size:0.9rem;">개발자 관리</strong>
+            </div>
+        </header>
+
+        <section class="form-section" style="margin-top:1rem;">
+            <h1 style="font-size:1.35rem;margin:0 0 0.35rem;color:var(--text-main);">관리자 페이지</h1>
+            <p style="margin:0 0 1rem;color:var(--text-muted);font-size:0.84rem;line-height:1.5;">Supabase Edge Function 배포 후 관리자 토큰으로 접속 기록과 서버 백업을 확인합니다.</p>
+
+            <div class="developer-card">
+                <label for="adminToken" style="display:block;color:var(--text-muted);font-size:0.78rem;font-weight:800;margin-bottom:0.45rem;">관리자 토큰</label>
+                <input id="adminToken" class="developer-input" type="password" autocomplete="off" placeholder="Edge Function에 설정한 관리자 토큰">
+                <div class="developer-actions">
+                    <button id="btnLoadAdminOverview" style="background:var(--primary-color);color:var(--primary-contrast);">현황 불러오기</button>
+                    <button id="btnDownloadEncryptedBackup" style="background:var(--bg-color);color:var(--text-main);border:1px solid var(--border-color);">암호화 백업</button>
+                </div>
+                <p id="adminStatus" style="margin:0.75rem 0 0;color:var(--text-muted);font-size:0.76rem;line-height:1.45;">관리자 토큰은 브라우저에 저장하지 않고 현재 탭에서만 사용합니다.</p>
+            </div>
+
+            <div class="developer-grid">
+                <div class="developer-card">
+                    <div id="metricUsers" class="metric-value">-</div>
+                    <div class="metric-label">기록된 사용자</div>
+                </div>
+                <div class="developer-card">
+                    <div id="metricEvents" class="metric-value">-</div>
+                    <div class="metric-label">최근 이벤트</div>
+                </div>
+                <div class="developer-card">
+                    <div id="metricGroups" class="metric-value">-</div>
+                    <div class="metric-label">서버 그룹</div>
+                </div>
+            </div>
+
+            <div class="developer-card" style="overflow-x:auto;">
+                <h2 style="font-size:1rem;margin:0 0 0.6rem;color:var(--text-main);">최근 접속 사용자</h2>
+                <table class="developer-table">
+                    <thead>
+                        <tr>
+                            <th>닉네임</th>
+                            <th>사용자 ID</th>
+                            <th>최근 접속</th>
+                            <th>로그인</th>
+                            <th>화면</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recentUsersBody">
+                        <tr><td colspan="5" style="color:var(--text-muted);text-align:center;">현황을 불러오면 표시됩니다.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://koddftotebkjomwmauly.supabase.co';
+        const ADMIN_FUNCTION_URL = `${SUPABASE_URL}/functions/v1/item-finder-admin`;
+
+        const adminTokenInput = document.getElementById('adminToken');
+        const adminStatus = document.getElementById('adminStatus');
+        const recentUsersBody = document.getElementById('recentUsersBody');
+        const savedToken = sessionStorage.getItem('itemFinder_admin_token') || '';
+        adminTokenInput.value = savedToken;
+
+        function setStatus(message, isError = false) {
+            adminStatus.textContent = message;
+            adminStatus.style.color = isError ? '#ef4444' : 'var(--text-muted)';
+        }
+
+        function getAdminToken() {
+            const token = adminTokenInput.value.trim();
+            if (!token) throw new Error('관리자 토큰을 입력해주세요.');
+            sessionStorage.setItem('itemFinder_admin_token', token);
+            return token;
+        }
+
+        async function callAdmin(mode) {
+            const token = getAdminToken();
+            const res = await fetch(`${ADMIN_FUNCTION_URL}?mode=${encodeURIComponent(mode)}`, {
+                headers: { 'x-admin-token': token }
+            });
+            if (!res.ok) {
+                const text = await res.text().catch(() => '');
+                throw new Error(text || `관리자 API 오류 (${res.status})`);
+            }
+            return res.json();
+        }
+
+        function renderOverview(data) {
+            document.getElementById('metricUsers').textContent = data.totalUsers ?? 0;
+            document.getElementById('metricEvents').textContent = data.totalEvents ?? 0;
+            document.getElementById('metricGroups').textContent = data.totalGroups ?? 0;
+
+            const rows = (data.recentUsers || []).map(user => `
+                <tr>
+                    <td>${escapeHtml(user.nickname || '회원')}</td>
+                    <td>${escapeHtml(user.user_id || '')}</td>
+                    <td>${user.last_seen_at ? new Date(user.last_seen_at).toLocaleString('ko-KR') : '-'}</td>
+                    <td>${user.login_count || 0}회</td>
+                    <td>${escapeHtml(user.last_page || '-')}</td>
+                </tr>
+            `).join('');
+            recentUsersBody.innerHTML = rows || '<tr><td colspan="5" style="color:var(--text-muted);text-align:center;">최근 접속 기록이 없습니다.</td></tr>';
+        }
+
+        function escapeHtml(value) {
+            return String(value || '').replace(/[&<>"']/g, char => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            }[char]));
+        }
+
+        function toBase64(bytes) {
+            let binary = '';
+            bytes.forEach(byte => binary += String.fromCharCode(byte));
+            return btoa(binary);
+        }
+
+        async function encryptBackup(payload, passphrase) {
+            const encoder = new TextEncoder();
+            const salt = crypto.getRandomValues(new Uint8Array(16));
+            const iv = crypto.getRandomValues(new Uint8Array(12));
+            const keyMaterial = await crypto.subtle.importKey('raw', encoder.encode(passphrase), 'PBKDF2', false, ['deriveKey']);
+            const key = await crypto.subtle.deriveKey(
+                { name: 'PBKDF2', salt, iterations: 250000, hash: 'SHA-256' },
+                keyMaterial,
+                { name: 'AES-GCM', length: 256 },
+                false,
+                ['encrypt']
+            );
+            const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, encoder.encode(JSON.stringify(payload)));
+            return {
+                app: 'item_finder_admin_backup',
+                version: 1,
+                encryptedAt: new Date().toISOString(),
+                algorithm: 'AES-GCM',
+                kdf: 'PBKDF2-SHA256',
+                iterations: 250000,
+                salt: toBase64(salt),
+                iv: toBase64(iv),
+                data: toBase64(new Uint8Array(encrypted))
+            };
+        }
+
+        function downloadJson(filename, payload) {
+            const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        }
+
+        document.getElementById('btnLoadAdminOverview').addEventListener('click', async () => {
+            setStatus('현황을 불러오는 중입니다...');
+            try {
+                const data = await callAdmin('overview');
+                renderOverview(data);
+                setStatus('현황을 불러왔습니다.');
+            } catch(e) {
+                setStatus(e.message, true);
+            }
+        });
+
+        document.getElementById('btnDownloadEncryptedBackup').addEventListener('click', async () => {
+            const passphrase = prompt('백업 파일을 암호화할 비밀번호를 입력해주세요. 이 비밀번호를 잃어버리면 복구할 수 없습니다.');
+            if (!passphrase) return;
+            setStatus('서버 데이터를 불러와 암호화하는 중입니다...');
+            try {
+                const backup = await callAdmin('backup');
+                const encrypted = await encryptBackup(backup, passphrase);
+                const d = new Date();
+                const stamp = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}_${String(d.getHours()).padStart(2, '0')}${String(d.getMinutes()).padStart(2, '0')}`;
+                downloadJson(`item_finder_server_backup_${stamp}.encrypted.json`, encrypted);
+                setStatus('암호화 백업 파일을 저장했습니다.');
+            } catch(e) {
+                setStatus(e.message, true);
+            }
+        });
+
+        if (window.lucide) lucide.createIcons();
+    </script>
+</body>
+</html>

@@ -1,4 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
+    window.ITEM_FINDER_APP_VERSION = window.ITEM_FINDER_APP_VERSION || 'v29';
+    window.ITEM_FINDER_APP_RELEASE_DATE = window.ITEM_FINDER_APP_RELEASE_DATE || '2026.05.24.';
+    if (window.recordUsageEvent) window.recordUsageEvent('visit').catch(() => {});
+
     // Apply saved theme
     const savedTheme = localStorage.getItem('itemFinder_theme') || 'light';
     document.documentElement.setAttribute('data-theme', savedTheme);
@@ -57,6 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const stamp = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}_${String(d.getHours()).padStart(2, '0')}${String(d.getMinutes()).padStart(2, '0')}`;
         downloadJson(`item_finder_backup_${stamp}.json`, payload);
         showToast('로컬 백업 파일을 내보냈습니다.');
+        if (window.recordUsageEvent) window.recordUsageEvent('backup_export', { force: true }).catch(() => {});
     }
 
     async function importLocalBackupFile(file) {
@@ -79,6 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (window.syncToCloud) await window.syncToCloud().catch(() => {});
 
             showToast('로컬 백업 파일을 복원했습니다.');
+            if (window.recordUsageEvent) window.recordUsageEvent('backup_import', { force: true }).catch(() => {});
             setTimeout(() => window.location.reload(), 700);
         } catch (e) {
             alert('백업 파일을 읽지 못했습니다. JSON 파일인지 확인해주세요.');

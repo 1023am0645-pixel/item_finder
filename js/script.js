@@ -1,6 +1,15 @@
 document.addEventListener('DOMContentLoaded', () => {
     const APP_UPDATE_HISTORY = [
         {
+            version: 'v29',
+            date: '2026.05.24.',
+            items: [
+                '문의/고객센터 추가',
+                '접속 기록 저장 준비',
+                '관리자 페이지 설계 문서 추가'
+            ]
+        },
+        {
             version: 'v28',
             date: '2026.05.20.',
             items: [
@@ -206,6 +215,8 @@ document.addEventListener('DOMContentLoaded', () => {
         ]
     };
     const APP_RELEASE_DATE = currentUpdate.date;
+    window.ITEM_FINDER_APP_VERSION = APP_VERSION;
+    window.ITEM_FINDER_APP_RELEASE_DATE = APP_RELEASE_DATE;
 
     function getVersionNumber(version) {
         return parseInt(String(version || '').replace(/[^0-9]/g, ''), 10) || 0;
@@ -243,6 +254,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (isKakaoLoggedIn && loginOverlay) {
         loginOverlay.style.display = 'none';
         updateAppTitle();
+        if (window.recordUsageEvent) window.recordUsageEvent('visit').catch(() => {});
         setTimeout(checkVersionAndShowStartupPopup, 300);
     }
 
@@ -298,6 +310,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const storedNick = localStorage.getItem('kc_nickname');
         if (storedNick) {
             localStorage.setItem('kc_logged_in', 'true');
+            if (window.recordUsageEvent) window.recordUsageEvent('login', { force: true }).catch(() => {});
             loginOverlay.style.opacity = '0';
             setTimeout(() => {
                 // 새로고침으로 클라우드 데이터를 화면에 반영
@@ -326,6 +339,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 400);
             if (window.updateNicknameInCloud) window.updateNicknameInCloud(finalNick).catch(() => {});
             if (window.syncToCloud) window.syncToCloud().catch(() => {});
+            if (window.recordUsageEvent) window.recordUsageEvent('login', { force: true }).catch(() => {});
         };
     }
 
@@ -635,6 +649,42 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const btnShareSupportReport = document.getElementById('btnShareSupportReport');
+    const btnCopySupportReport = document.getElementById('btnCopySupportReport');
+    if (btnShareSupportReport) {
+        btnShareSupportReport.addEventListener('click', async () => {
+            if (!window.itemFinderSupport) return;
+            const originalHTML = btnShareSupportReport.innerHTML;
+            btnShareSupportReport.disabled = true;
+            btnShareSupportReport.textContent = '문의 내용 준비 중...';
+            try {
+                const result = await window.itemFinderSupport.shareReport();
+                if (result === 'opened') showToast('문의 내용을 복사하고 문의 채널을 열었어요.');
+                else if (result === 'shared') showToast('문의 공유창을 열었어요.');
+                else showToast('문의 템플릿을 복사했어요.');
+                if (window.recordUsageEvent) window.recordUsageEvent('support_share', { force: true }).catch(() => {});
+            } catch(e) {
+                showToast('문의 공유를 완료하지 못했어요.');
+            } finally {
+                btnShareSupportReport.disabled = false;
+                btnShareSupportReport.innerHTML = originalHTML;
+                if (window.lucide) lucide.createIcons();
+            }
+        });
+    }
+    if (btnCopySupportReport) {
+        btnCopySupportReport.addEventListener('click', async () => {
+            if (!window.itemFinderSupport) return;
+            try {
+                await window.itemFinderSupport.copyReport();
+                showToast('문의 템플릿을 복사했어요.');
+                if (window.recordUsageEvent) window.recordUsageEvent('support_copy').catch(() => {});
+            } catch(e) {
+                showToast('문의 템플릿을 복사하지 못했어요.');
+            }
+        });
+    }
+
     if (window.location.hash === '#settings') {
         setTimeout(openSettingsOverlay, 250);
     }
@@ -900,6 +950,7 @@ document.addEventListener('DOMContentLoaded', () => {
         a.remove();
         URL.revokeObjectURL(url);
         showToast('로컬 백업 파일을 내보냈습니다.');
+        if (window.recordUsageEvent) window.recordUsageEvent('backup_export', { force: true }).catch(() => {});
     }
 
     async function importLocalBackupFile(file) {
@@ -921,6 +972,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if(window.syncToCloud) await window.syncToCloud().catch(() => {});
 
             showToast('로컬 백업 파일을 복원했습니다.');
+            if (window.recordUsageEvent) window.recordUsageEvent('backup_import', { force: true }).catch(() => {});
             setTimeout(() => window.location.reload(), 700);
         } catch(e) {
             alert('백업 파일을 읽지 못했습니다. JSON 파일인지 확인해주세요.');

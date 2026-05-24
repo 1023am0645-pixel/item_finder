@@ -1,0 +1,2 @@
+[functions.item-finder-admin]
+verify_jwt = false

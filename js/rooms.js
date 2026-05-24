@@ -1,4 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
+    window.ITEM_FINDER_APP_VERSION = window.ITEM_FINDER_APP_VERSION || 'v29';
+    window.ITEM_FINDER_APP_RELEASE_DATE = window.ITEM_FINDER_APP_RELEASE_DATE || '2026.05.24.';
+    if (window.recordUsageEvent) window.recordUsageEvent('visit').catch(() => {});
+
     // 새로고침 버튼
     const btnSyncRefresh = document.getElementById('btnSyncRefresh');
     if (btnSyncRefresh) {
@@ -99,6 +103,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnRoomsAppUpdate = document.getElementById('btnRoomsAppUpdate');
     const btnRoomsOpenUpdateDetails = document.getElementById('btnRoomsOpenUpdateDetails');
     const roomsUpdateDetailsPanel = document.getElementById('roomsUpdateDetailsPanel');
+    const btnRoomsShareSupportReport = document.getElementById('btnRoomsShareSupportReport');
+    const btnRoomsCopySupportReport = document.getElementById('btnRoomsCopySupportReport');
 
     function openRoomsSettings() {
         if (!roomsSettingsOverlay) return;
@@ -324,6 +330,39 @@ document.addEventListener('DOMContentLoaded', () => {
         btnRoomsOpenUpdateDetails.addEventListener('click', () => {
             if (!roomsUpdateDetailsPanel) return;
             roomsUpdateDetailsPanel.style.display = roomsUpdateDetailsPanel.style.display === 'block' ? 'none' : 'block';
+        });
+    }
+    if (btnRoomsShareSupportReport) {
+        btnRoomsShareSupportReport.addEventListener('click', async () => {
+            if (!window.itemFinderSupport) return;
+            const originalHTML = btnRoomsShareSupportReport.innerHTML;
+            btnRoomsShareSupportReport.disabled = true;
+            btnRoomsShareSupportReport.textContent = '문의 내용 준비 중...';
+            try {
+                const result = await window.itemFinderSupport.shareReport();
+                if (result === 'opened') showToast('문의 내용을 복사하고 문의 채널을 열었어요.');
+                else if (result === 'shared') showToast('문의 공유창을 열었어요.');
+                else showToast('문의 템플릿을 복사했어요.');
+                if (window.recordUsageEvent) window.recordUsageEvent('support_share', { force: true }).catch(() => {});
+            } catch(e) {
+                showToast('문의 공유를 완료하지 못했어요.');
+            } finally {
+                btnRoomsShareSupportReport.disabled = false;
+                btnRoomsShareSupportReport.innerHTML = originalHTML;
+                if (window.lucide) lucide.createIcons();
+            }
+        });
+    }
+    if (btnRoomsCopySupportReport) {
+        btnRoomsCopySupportReport.addEventListener('click', async () => {
+            if (!window.itemFinderSupport) return;
+            try {
+                await window.itemFinderSupport.copyReport();
+                showToast('문의 템플릿을 복사했어요.');
+                if (window.recordUsageEvent) window.recordUsageEvent('support_copy').catch(() => {});
+            } catch(e) {
+                showToast('문의 템플릿을 복사하지 못했어요.');
+            }
         });
     }
     document.querySelectorAll('.rooms-manual-topic-btn').forEach(btn => {
