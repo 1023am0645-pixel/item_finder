@@ -17,7 +17,7 @@ const headers = {
 let currentUserId = null;
 let currentGroupId = null;
 
-const SUPPORT_KAKAO_CUSTOMER_CENTER_URL = '';
+const SUPPORT_KAKAO_CUSTOMER_CENTER_URL = 'https://pf.kakao.com/_RexmbX/chat';
 const SUPPORT_CHATBOT_URL = '';
 const SUPPORT_CONTACT_LABEL = '물건어디 개발자';
 

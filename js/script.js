@@ -1,6 +1,13 @@
 document.addEventListener('DOMContentLoaded', () => {
     const APP_UPDATE_HISTORY = [
         {
+            version: 'v31',
+            date: '2026.05.24.',
+            items: [
+                '카카오톡 고객센터 1:1 채팅 연결'
+            ]
+        },
+        {
             version: 'v30',
             date: '2026.05.24.',
             items: [

@@ -11,7 +11,7 @@
 카카오톡 채널 1:1 채팅 URL이나 전용 챗봇 링크를 만들면 `js/firebase-sync.js` 상단의 아래 값에 링크를 넣으면 됩니다.
 
 ```js
-const SUPPORT_KAKAO_CUSTOMER_CENTER_URL = '';
+const SUPPORT_KAKAO_CUSTOMER_CENTER_URL = 'https://pf.kakao.com/_RexmbX/chat';
 const SUPPORT_CHATBOT_URL = '';
 ```
 
