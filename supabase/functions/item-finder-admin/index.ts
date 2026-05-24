@@ -14,6 +14,13 @@ type UsageEvent = {
   created_at?: string;
 };
 
+type UserGroup = {
+  user_id?: string;
+  nickname?: string;
+  group_id?: string;
+  joined_at?: string;
+};
+
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -35,7 +42,7 @@ async function fetchTable<T>(supabaseUrl: string, serviceKey: string, path: stri
   return await res.json();
 }
 
-function buildOverview(events: UsageEvent[], groups: unknown[]) {
+function buildOverview(events: UsageEvent[], groups: unknown[], userGroups: UserGroup[]) {
   const userMap = new Map<string, {
     user_id: string;
     nickname: string;
@@ -45,6 +52,19 @@ function buildOverview(events: UsageEvent[], groups: unknown[]) {
     last_page: string;
     app_version: string;
   }>();
+
+  for (const user of userGroups) {
+    const userId = user.user_id || 'unknown';
+    userMap.set(userId, {
+      user_id: userId,
+      nickname: user.nickname || '회원',
+      group_id: user.group_id || '',
+      last_seen_at: '',
+      login_count: 0,
+      last_page: user.joined_at ? '가입 기록만 있음' : '접속 기록 없음',
+      app_version: '',
+    });
+  }
 
   for (const event of events) {
     const userId = event.user_id || 'unknown';
@@ -74,7 +94,11 @@ function buildOverview(events: UsageEvent[], groups: unknown[]) {
   }
 
   const recentUsers = Array.from(userMap.values())
-    .sort((a, b) => new Date(b.last_seen_at).getTime() - new Date(a.last_seen_at).getTime())
+    .sort((a, b) => {
+      const bTime = b.last_seen_at ? new Date(b.last_seen_at).getTime() : 0;
+      const aTime = a.last_seen_at ? new Date(a.last_seen_at).getTime() : 0;
+      return bTime - aTime;
+    })
     .slice(0, 100);
 
   return {
@@ -114,13 +138,13 @@ Deno.serve(async (req) => {
       serviceKey,
       'groups?select=group_id,items,rooms,backups,theme,updated_at',
     );
+    const userGroups = await fetchTable<UserGroup>(
+      supabaseUrl,
+      serviceKey,
+      'user_groups?select=*',
+    );
 
     if (mode === 'backup') {
-      const userGroups = await fetchTable(
-        supabaseUrl,
-        serviceKey,
-        'user_groups?select=*',
-      );
       return jsonResponse({
         app: 'item_finder',
         exportedAt: new Date().toISOString(),
@@ -130,7 +154,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    return jsonResponse(buildOverview(events, groups));
+    return jsonResponse(buildOverview(events, groups, userGroups));
   } catch (error) {
     return jsonResponse({ error: error instanceof Error ? error.message : 'Unknown error.' }, 500);
   }
