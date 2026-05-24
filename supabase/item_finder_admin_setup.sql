@@ -34,8 +34,7 @@ with check (
         'signup',
         'join_group',
         'create_invite',
-        'support_share',
-        'support_copy',
+        'support_open',
         'backup_export',
         'backup_import'
     )

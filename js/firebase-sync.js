@@ -17,7 +17,7 @@ const headers = {
 let currentUserId = null;
 let currentGroupId = null;
 
-const SUPPORT_OPENCHAT_URL = '';
+const SUPPORT_KAKAO_CUSTOMER_CENTER_URL = '';
 const SUPPORT_CHATBOT_URL = '';
 const SUPPORT_CONTACT_LABEL = '물건어디 개발자';
 
@@ -98,23 +98,13 @@ async function copyText(text) {
     return copied;
 }
 
-async function shareSupportReport() {
-    const report = buildSupportReport();
-    const directUrl = SUPPORT_CHATBOT_URL || SUPPORT_OPENCHAT_URL;
+async function openSupportChannel() {
+    const directUrl = SUPPORT_CHATBOT_URL || SUPPORT_KAKAO_CUSTOMER_CENTER_URL;
     if (directUrl) {
-        await copyText(report).catch(() => {});
         window.open(directUrl, '_blank', 'noopener');
         return 'opened';
     }
-    if (navigator.share) {
-        await navigator.share({
-            title: '물건어디 문의',
-            text: report
-        });
-        return 'shared';
-    }
-    await copyText(report);
-    return 'copied';
+    return 'missing-url';
 }
 
 async function recordUsageEvent(eventType = 'visit', options = {}) {
@@ -451,11 +441,10 @@ window.updateNicknameInCloud = updateNicknameInCloud;
 window.recordUsageEvent = recordUsageEvent;
 window.itemFinderSupport = {
     contactLabel: SUPPORT_CONTACT_LABEL,
-    openChatUrl: SUPPORT_OPENCHAT_URL,
+    kakaoCustomerCenterUrl: SUPPORT_KAKAO_CUSTOMER_CENTER_URL,
     chatbotUrl: SUPPORT_CHATBOT_URL,
     buildReport: buildSupportReport,
-    copyReport: () => copyText(buildSupportReport()),
-    shareReport: shareSupportReport
+    openChannel: openSupportChannel
 };
 
 // 저장된 사용자/그룹 ID 복원

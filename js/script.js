@@ -1,10 +1,18 @@
 document.addEventListener('DOMContentLoaded', () => {
     const APP_UPDATE_HISTORY = [
         {
+            version: 'v30',
+            date: '2026.05.24.',
+            items: [
+                '문의하기 메뉴명 정리',
+                '카카오톡 고객센터 버튼으로 단순화'
+            ]
+        },
+        {
             version: 'v29',
             date: '2026.05.24.',
             items: [
-                '문의/고객센터 추가',
+                '문의하기 기능 추가',
                 '접속 기록 저장 준비',
                 '관리자 페이지 설계 문서 추가'
             ]
@@ -650,37 +658,26 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const btnShareSupportReport = document.getElementById('btnShareSupportReport');
-    const btnCopySupportReport = document.getElementById('btnCopySupportReport');
     if (btnShareSupportReport) {
         btnShareSupportReport.addEventListener('click', async () => {
             if (!window.itemFinderSupport) return;
             const originalHTML = btnShareSupportReport.innerHTML;
             btnShareSupportReport.disabled = true;
-            btnShareSupportReport.textContent = '문의 내용 준비 중...';
+            btnShareSupportReport.textContent = '고객센터 여는 중...';
             try {
-                const result = await window.itemFinderSupport.shareReport();
-                if (result === 'opened') showToast('문의 내용을 복사하고 문의 채널을 열었어요.');
-                else if (result === 'shared') showToast('문의 공유창을 열었어요.');
-                else showToast('문의 템플릿을 복사했어요.');
-                if (window.recordUsageEvent) window.recordUsageEvent('support_share', { force: true }).catch(() => {});
+                const result = await window.itemFinderSupport.openChannel();
+                if (result === 'opened') {
+                    showToast('카카오톡 고객센터를 열었어요.');
+                    if (window.recordUsageEvent) window.recordUsageEvent('support_open', { force: true }).catch(() => {});
+                } else {
+                    showToast('카카오톡 고객센터 링크가 아직 설정되지 않았어요.');
+                }
             } catch(e) {
-                showToast('문의 공유를 완료하지 못했어요.');
+                showToast('카카오톡 고객센터를 열지 못했어요.');
             } finally {
                 btnShareSupportReport.disabled = false;
                 btnShareSupportReport.innerHTML = originalHTML;
                 if (window.lucide) lucide.createIcons();
-            }
-        });
-    }
-    if (btnCopySupportReport) {
-        btnCopySupportReport.addEventListener('click', async () => {
-            if (!window.itemFinderSupport) return;
-            try {
-                await window.itemFinderSupport.copyReport();
-                showToast('문의 템플릿을 복사했어요.');
-                if (window.recordUsageEvent) window.recordUsageEvent('support_copy').catch(() => {});
-            } catch(e) {
-                showToast('문의 템플릿을 복사하지 못했어요.');
             }
         });
     }
