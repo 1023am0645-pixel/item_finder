@@ -454,6 +454,48 @@ if (storedUserId) currentUserId = storedUserId;
 const storedGroupId = localStorage.getItem('kc_group_id');
 if (storedGroupId) currentGroupId = storedGroupId;
 
+async function restoreKakaoCloudIdentity() {
+    if (currentUserId || localStorage.getItem('kc_logged_in') !== 'true') return false;
+    if (!window.Kakao || !window.Kakao.API) return false;
+
+    try {
+        if (!window.Kakao.isInitialized()) {
+            window.Kakao.init('aba8aed2de3168350dd5fdf66f95820c');
+        }
+
+        const profile = await new Promise((resolve, reject) => {
+            window.Kakao.API.request({
+                url: '/v2/user/me',
+                success: resolve,
+                fail: reject
+            });
+        });
+
+        if (!profile || !profile.id) return false;
+        setCloudUserId(profile.id);
+        if (profile.properties && profile.properties.nickname && !localStorage.getItem('kc_nickname')) {
+            localStorage.setItem('kc_nickname', profile.properties.nickname);
+        }
+        await getOrCreateGroup();
+        if (localStorage.getItem('kc_nickname')) {
+            await updateNicknameInCloud(localStorage.getItem('kc_nickname'));
+        }
+        await recordUsageEvent('visit', { force: true });
+        return true;
+    } catch(e) {
+        console.warn('[Supabase] 카카오 사용자 ID 복원 실패:', e.message || e);
+        return false;
+    }
+}
+
+window.restoreKakaoCloudIdentity = restoreKakaoCloudIdentity;
+
+if (localStorage.getItem('kc_logged_in') === 'true' && !currentUserId) {
+    setTimeout(() => {
+        restoreKakaoCloudIdentity().catch(() => {});
+    }, 500);
+}
+
 // URL에 초대 코드가 있으면 저장해두기
 const urlParams = new URLSearchParams(window.location.search);
 const inviteCode = urlParams.get('invite');

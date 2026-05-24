@@ -1,4 +1,4 @@
-const CACHE_NAME = 'item-finder-v31';
+const CACHE_NAME = 'item-finder-v32';
 const STATIC_ASSETS = [
   './css/style.css',
   './js/script.js',

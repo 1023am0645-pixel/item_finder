@@ -1,6 +1,14 @@
 document.addEventListener('DOMContentLoaded', () => {
     const APP_UPDATE_HISTORY = [
         {
+            version: 'v32',
+            date: '2026.05.24.',
+            items: [
+                '카카오 계정 서버 연결 확인 보강',
+                '관리자 사용자 목록 누락 방지'
+            ]
+        },
+        {
             version: 'v31',
             date: '2026.05.24.',
             items: [
@@ -269,6 +277,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (isKakaoLoggedIn && loginOverlay) {
         loginOverlay.style.display = 'none';
         updateAppTitle();
+        if (window.restoreKakaoCloudIdentity) window.restoreKakaoCloudIdentity().catch(() => {});
         if (window.recordUsageEvent) window.recordUsageEvent('visit').catch(() => {});
         setTimeout(checkVersionAndShowStartupPopup, 300);
     }
@@ -305,6 +314,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 fail: function(err) {
                     proceedToNicknameStep('회원');
                 }
+            });
+        });
+    }
+
+    function requestKakaoProfile() {
+        return new Promise((resolve, reject) => {
+            if (!window.Kakao || !window.Kakao.API) {
+                reject(new Error('Kakao SDK is not ready'));
+                return;
+            }
+            window.Kakao.API.request({
+                url: '/v2/user/me',
+                success: resolve,
+                fail: reject
             });
         });
     }
@@ -352,9 +375,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 showToast(`환영합니다, ${finalNick}님!`);
                 checkVersionAndShowStartupPopup();
             }, 400);
-            if (window.updateNicknameInCloud) window.updateNicknameInCloud(finalNick).catch(() => {});
-            if (window.syncToCloud) window.syncToCloud().catch(() => {});
-            if (window.recordUsageEvent) window.recordUsageEvent('login', { force: true }).catch(() => {});
+            (async () => {
+                if (!localStorage.getItem('kc_user_id')) {
+                    try {
+                        const profile = await requestKakaoProfile();
+                        if (profile && profile.id && window.setCloudUserId) window.setCloudUserId(profile.id);
+                    } catch(e) {
+                        console.warn('Kakao profile restore skipped:', e);
+                    }
+                }
+                if (window.getOrCreateGroup) await window.getOrCreateGroup().catch(() => {});
+                if (window.updateNicknameInCloud) await window.updateNicknameInCloud(finalNick).catch(() => {});
+                if (window.syncToCloud) await window.syncToCloud().catch(() => {});
+                if (window.recordUsageEvent) await window.recordUsageEvent('login', { force: true }).catch(() => {});
+            })();
         };
     }
 
