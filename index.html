@@ -14,7 +14,7 @@
     <!-- Android PWA 설명 -->
     <meta name="description" content="우리집 물건 위치를 저장하고 찾아주는 홈 인벤토리 앱">
     <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;800;900&family=Nanum+Pen+Script&family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=32">
+    <link rel="stylesheet" href="css/style.css?v=33">
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://t1.kakaocdn.net/kakao_js_sdk/1.43.1/kakao.min.js"></script>
     <script>
@@ -266,7 +266,7 @@
                 <h3 style="font-size:0.9rem;color:var(--text-muted);margin:0 0 0.7rem;">6. 앱 업데이트</h3>
                 <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
                     <span style="font-size:0.84rem;color:var(--text-muted);font-weight:700;">현재 버전</span>
-                    <span id="settingsVersionText" style="font-size:0.84rem;color:var(--text-main);font-weight:800;">v32</span>
+                    <span id="settingsVersionText" style="font-size:0.84rem;color:var(--text-main);font-weight:800;">v33</span>
                 </div>
                 <p id="settingsVersionStatus" style="margin:0.35rem 0 0;color:var(--text-muted);font-size:0.72rem;line-height:1.4;text-align:right;">최신버전입니다</p>
                 <button id="btnOpenUpdateDetails" style="width:100%;margin-top:0.8rem;background:var(--bg-color);color:var(--text-main);border:1px solid var(--border-color);padding:0.65rem;border-radius:10px;font-weight:700;cursor:pointer;font-size:0.82rem;display:flex;align-items:center;justify-content:center;gap:5px;">
@@ -306,15 +306,19 @@
                         <h3 style="margin:0;font-size:1.35rem;color:#202124;font-weight:800;">최신 업데이트 사항</h3>
                         <span style="width:9px;height:9px;background:#2563eb;border-radius:50%;display:inline-block;"></span>
                     </div>
-                    <p id="latestUpdateMeta" style="margin:0 0 1.1rem;color:#5f6368;font-size:0.94rem;">v32 · 2026.05.24.</p>
+                    <p id="latestUpdateMeta" style="margin:0 0 1.1rem;color:#5f6368;font-size:0.94rem;">v33 · 2026.05.31.</p>
                     <div id="latestUpdateItems" style="color:#202124;font-size:1rem;line-height:1.65;">
-                        <p style="margin:0 0 0.55rem;">• 카카오 계정 서버 연결 확인 보강</p>
-                        <p style="margin:0;">• 관리자 사용자 목록 누락 방지</p>
+                        <p style="margin:0 0 0.55rem;">• 기존 물건 정보 수정 기능 추가</p>
+                        <p style="margin:0;">• 위치, 구역, 메모, 사진 변경 지원</p>
                     </div>
                 </section>
                 <section style="padding:1.6rem 1.4rem;background:#ffffff;">
                     <h3 style="margin:0 0 1rem;font-size:1.15rem;color:#202124;font-weight:800;">이전 업데이트</h3>
                     <div id="previousUpdateList" style="display:flex;flex-direction:column;gap:1.25rem;color:#202124;font-size:0.96rem;line-height:1.6;">
+                        <div>
+                            <p style="margin:0 0 0.35rem;font-weight:800;">v32 · 2026.05.24.</p>
+                            <p style="margin:0;color:#5f6368;">• 카카오 계정 서버 연결 확인 보강<br>• 관리자 사용자 목록 누락 방지</p>
+                        </div>
                         <div>
                             <p style="margin:0 0 0.35rem;font-weight:800;">v31 · 2026.05.24.</p>
                             <p style="margin:0;color:#5f6368;">• 카카오톡 고객센터 1:1 채팅 연결</p>
@@ -365,7 +369,7 @@
             <i data-lucide="chevron-right" style="width:28px; height:28px;"></i>
         </button>
     </div>
-    <script src="js/firebase-sync.js?v=32"></script>
-    <script src="js/script.js?v=32"></script>
+    <script src="js/firebase-sync.js?v=33"></script>
+    <script src="js/script.js?v=33"></script>
 </body>
 </html>

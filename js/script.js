@@ -1,6 +1,14 @@
 document.addEventListener('DOMContentLoaded', () => {
     const APP_UPDATE_HISTORY = [
         {
+            version: 'v33',
+            date: '2026.05.31.',
+            items: [
+                '기존 물건 정보 수정 기능 추가',
+                '위치, 구역, 메모, 사진 변경 지원'
+            ]
+        },
+        {
             version: 'v32',
             date: '2026.05.24.',
             items: [

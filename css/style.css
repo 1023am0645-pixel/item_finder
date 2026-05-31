@@ -457,6 +457,221 @@ header {
   color: #fff;
 }
 
+.item-edit-btn {
+  background: rgba(255, 140, 66, 0.1);
+  border: 1px solid rgba(255, 140, 66, 0.22);
+  color: var(--primary-color);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 8px;
+  line-height: 0;
+  transition: opacity 0.2s, background 0.2s, transform 0.2s;
+  flex-shrink: 0;
+}
+
+.item-edit-btn:hover {
+  background: rgba(255, 140, 66, 0.18);
+  transform: translateY(-1px);
+}
+
+.item-edit-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.1rem;
+  background: rgba(15, 23, 42, 0.48);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.item-edit-dialog {
+  position: relative;
+  width: min(94vw, 420px);
+  max-height: min(88vh, 720px);
+  overflow-y: auto;
+  background: var(--surface-color);
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+  border-radius: 24px;
+  padding: 1.35rem;
+  box-shadow: 0 24px 68px rgba(15, 23, 42, 0.28);
+}
+
+.item-edit-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  background: var(--bg-color);
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.item-edit-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0 2.2rem 1rem 0;
+}
+
+.item-edit-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 16px;
+  background: rgba(255, 140, 66, 0.14);
+  color: var(--primary-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.item-edit-heading h3 {
+  margin: 0;
+  font-size: 1.18rem;
+  font-weight: 850;
+}
+
+.item-edit-heading p {
+  margin: 0.25rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.item-edit-label {
+  display: block;
+  margin: 0.75rem 0 0.35rem;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.item-edit-input {
+  width: 100%;
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  background: var(--bg-color);
+  color: var(--text-main);
+  padding: 0.82rem 0.9rem;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 650;
+  outline: none;
+}
+
+.item-edit-input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 4px rgba(255, 140, 66, 0.14);
+}
+
+.item-edit-textarea {
+  min-height: 84px;
+  resize: vertical;
+  line-height: 1.45;
+}
+
+.item-edit-photo-row {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+  margin-top: 0.9rem;
+}
+
+.item-edit-photo-preview {
+  width: 72px;
+  height: 72px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  background: var(--bg-color);
+  flex-shrink: 0;
+}
+
+.item-edit-photo-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.item-edit-photo-actions {
+  display: flex;
+  flex: 1;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.item-edit-photo-actions button {
+  flex: 1;
+  min-width: 110px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--bg-color);
+  color: var(--text-main);
+  padding: 0.65rem 0.7rem;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.item-edit-actions {
+  display: flex;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+.item-edit-actions button {
+  flex: 1;
+  border: none;
+  border-radius: 14px;
+  padding: 0.86rem;
+  font-family: inherit;
+  font-size: 0.92rem;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.item-edit-cancel {
+  background: var(--bg-color);
+  color: var(--text-muted);
+}
+
+.item-edit-save {
+  background: var(--primary-color);
+  color: var(--primary-contrast);
+}
+
+@media (max-width: 420px) {
+  .item-edit-dialog {
+    padding: 1.15rem;
+  }
+
+  .item-edit-photo-row,
+  .item-edit-actions {
+    flex-direction: column;
+  }
+
+  .item-edit-photo-preview,
+  .item-edit-actions button,
+  .item-edit-photo-actions,
+  .item-edit-photo-actions button {
+    width: 100%;
+  }
+}
+
 /* Hero Image */
 .hero-section {
   display: flex;

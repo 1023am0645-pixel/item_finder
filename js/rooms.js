@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
-    window.ITEM_FINDER_APP_VERSION = window.ITEM_FINDER_APP_VERSION || 'v32';
-    window.ITEM_FINDER_APP_RELEASE_DATE = window.ITEM_FINDER_APP_RELEASE_DATE || '2026.05.24.';
+    window.ITEM_FINDER_APP_VERSION = window.ITEM_FINDER_APP_VERSION || 'v33';
+    window.ITEM_FINDER_APP_RELEASE_DATE = window.ITEM_FINDER_APP_RELEASE_DATE || '2026.05.31.';
     if (window.recordUsageEvent) window.recordUsageEvent('visit').catch(() => {});
 
     // 새로고침 버튼
@@ -479,6 +479,226 @@ document.addEventListener('DOMContentLoaded', () => {
         if (window.syncToCloud) syncToCloud().catch(() => {});
     }
 
+    function saveItemsAndSync() {
+        localStorage.setItem('itemFinder_data', JSON.stringify(savedItems));
+        if (window.syncToCloud) syncToCloud().catch(() => {});
+    }
+
+    function getItemById(itemId) {
+        return savedItems.find(item => String(item.id) === String(itemId));
+    }
+
+    function makeItemEditButton(itemId, size = 12) {
+        return `
+            <button class="item-edit-btn" data-id="${escapeHTML(itemId)}" title="수정">
+                <i data-lucide="pencil" style="width:${size}px;height:${size}px;"></i>
+            </button>
+        `;
+    }
+
+    function attachItemEditButtons(root) {
+        root.querySelectorAll('.item-edit-btn').forEach(btn => {
+            btn.addEventListener('click', event => {
+                event.stopPropagation();
+                openItemEditDialog(btn.getAttribute('data-id'));
+            });
+        });
+    }
+
+    function compressEditImage(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onerror = reject;
+            reader.onload = event => {
+                const img = new Image();
+                img.onerror = reject;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const maxWidth = 400;
+                    let scaleSize = maxWidth / img.width;
+                    if (scaleSize > 1) scaleSize = 1;
+                    canvas.width = img.width * scaleSize;
+                    canvas.height = img.height * scaleSize;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    resolve(canvas.toDataURL('image/jpeg', 0.8));
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function openItemEditDialog(itemId) {
+        const item = getItemById(itemId);
+        if (!item) {
+            showToast('수정할 물건을 찾지 못했어요.');
+            renderRoomsContent();
+            return;
+        }
+
+        let nextPhoto = item.photo || null;
+        const overlay = document.createElement('div');
+        overlay.className = 'item-edit-overlay';
+        overlay.innerHTML = `
+            <div class="item-edit-dialog" role="dialog" aria-modal="true" aria-labelledby="itemEditTitle">
+                <button type="button" class="item-edit-close" aria-label="닫기"><i data-lucide="x" style="width:18px;height:18px;"></i></button>
+                <div class="item-edit-heading">
+                    <div class="item-edit-icon"><i data-lucide="pencil" style="width:20px;height:20px;"></i></div>
+                    <div>
+                        <h3 id="itemEditTitle">물건 정보 수정</h3>
+                        <p>이름, 위치, 메모를 바꿀 수 있어요.</p>
+                    </div>
+                </div>
+                <label class="item-edit-label" for="editItemName">물건 이름</label>
+                <input id="editItemName" class="item-edit-input" type="text" maxlength="40" value="${escapeHTML(item.name || '')}">
+
+                <label class="item-edit-label" for="editItemRoom">위치(방)</label>
+                <select id="editItemRoom" class="item-edit-input">
+                    ${roomArray.map(room => `<option value="${escapeHTML(room)}" ${room === item.room ? 'selected' : ''}>${escapeHTML(room)}</option>`).join('')}
+                </select>
+
+                <div id="editItemZoneRow">
+                    <label class="item-edit-label" for="editItemZone">세부 구역</label>
+                    <select id="editItemZone" class="item-edit-input"></select>
+                </div>
+
+                <label class="item-edit-label" for="editItemMemo">간단한 메모</label>
+                <textarea id="editItemMemo" class="item-edit-input item-edit-textarea" maxlength="120" placeholder="메모 없음">${escapeHTML(item.memo || '')}</textarea>
+
+                <div class="item-edit-photo-row">
+                    <div id="editPhotoPreview" class="item-edit-photo-preview" style="${nextPhoto ? '' : 'display:none;'}">
+                        <img src="${nextPhoto ? escapeHTML(nextPhoto) : ''}" alt="현재 사진">
+                    </div>
+                    <div class="item-edit-photo-actions">
+                        <button type="button" id="btnEditPhotoPick"><i data-lucide="camera" style="width:15px;height:15px;"></i>사진 변경</button>
+                        <button type="button" id="btnEditPhotoRemove"><i data-lucide="trash-2" style="width:15px;height:15px;"></i>사진 삭제</button>
+                    </div>
+                    <input id="editPhotoInput" type="file" accept="image/*" style="display:none;">
+                </div>
+
+                <div class="item-edit-actions">
+                    <button type="button" class="item-edit-cancel">취소</button>
+                    <button type="button" class="item-edit-save">저장</button>
+                </div>
+            </div>
+        `;
+
+        const nameInput = overlay.querySelector('#editItemName');
+        const roomSelect = overlay.querySelector('#editItemRoom');
+        const zoneRow = overlay.querySelector('#editItemZoneRow');
+        const zoneSelect = overlay.querySelector('#editItemZone');
+        const memoInput = overlay.querySelector('#editItemMemo');
+        const photoPreview = overlay.querySelector('#editPhotoPreview');
+        const photoPreviewImg = photoPreview.querySelector('img');
+        const photoInput = overlay.querySelector('#editPhotoInput');
+
+        const close = () => {
+            document.removeEventListener('keydown', handleKeydown);
+            overlay.remove();
+        };
+
+        const populateZones = (roomName, selectedZone) => {
+            const zones = loadZones();
+            const roomZones = zones[roomName] || [];
+            const zoneOptions = [...roomZones];
+            if (selectedZone && !zoneOptions.includes(selectedZone)) zoneOptions.unshift(selectedZone);
+
+            if (zoneOptions.length === 0) {
+                zoneRow.style.display = 'none';
+                zoneSelect.innerHTML = '<option value="">구역 없음</option>';
+                return;
+            }
+
+            zoneRow.style.display = 'block';
+            zoneSelect.innerHTML = '<option value="">구역 없음</option>' + zoneOptions.map(zone => (
+                `<option value="${escapeHTML(zone)}" ${zone === selectedZone ? 'selected' : ''}>${escapeHTML(zone)}</option>`
+            )).join('');
+        };
+
+        const save = () => {
+            const nextName = nameInput.value.trim();
+            const nextRoom = roomSelect.value;
+            const nextZone = zoneRow.style.display === 'none' ? null : (zoneSelect.value || null);
+            const nextMemo = memoInput.value.trim();
+
+            if (!nextName) {
+                showToast('물건 이름을 입력해주세요.');
+                nameInput.focus();
+                return;
+            }
+            if (!nextRoom) {
+                showToast('위치(방)를 선택해주세요.');
+                return;
+            }
+
+            const index = savedItems.findIndex(savedItem => String(savedItem.id) === String(itemId));
+            if (index === -1) {
+                showToast('수정할 물건을 찾지 못했어요.');
+                close();
+                renderRoomsContent();
+                return;
+            }
+
+            savedItems[index] = {
+                ...savedItems[index],
+                name: nextName,
+                room: nextRoom,
+                zone: nextZone,
+                memo: nextMemo,
+                photo: nextPhoto,
+                updatedAt: new Date().toISOString(),
+                updatedByNickname: localStorage.getItem('kc_nickname') || '회원',
+                updatedByUserId: localStorage.getItem('kc_user_id') || ''
+            };
+
+            saveItemsAndSync();
+            close();
+            showToast('물건 정보가 수정되었습니다.');
+            renderRoomsContent();
+        };
+
+        const handleKeydown = event => {
+            if (event.key === 'Escape') close();
+            if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') save();
+        };
+
+        roomSelect.addEventListener('change', () => populateZones(roomSelect.value, null));
+        overlay.querySelector('.item-edit-close').addEventListener('click', close);
+        overlay.querySelector('.item-edit-cancel').addEventListener('click', close);
+        overlay.querySelector('.item-edit-save').addEventListener('click', save);
+        overlay.addEventListener('click', event => {
+            if (event.target === overlay) close();
+        });
+        overlay.querySelector('#btnEditPhotoPick').addEventListener('click', () => photoInput.click());
+        overlay.querySelector('#btnEditPhotoRemove').addEventListener('click', () => {
+            nextPhoto = null;
+            photoPreview.style.display = 'none';
+            photoPreviewImg.src = '';
+            photoInput.value = '';
+        });
+        photoInput.addEventListener('change', async event => {
+            const file = event.target.files[0];
+            if (!file) return;
+            try {
+                nextPhoto = await compressEditImage(file);
+                photoPreviewImg.src = nextPhoto;
+                photoPreview.style.display = 'block';
+            } catch(e) {
+                showToast('사진을 불러오지 못했어요.');
+            }
+        });
+
+        populateZones(item.room, item.zone);
+        document.addEventListener('keydown', handleKeydown);
+        document.body.appendChild(overlay);
+        if (window.lucide) lucide.createIcons();
+        setTimeout(() => {
+            nameInput.focus();
+            nameInput.select();
+        }, 30);
+    }
+
     function renderRoomManagerList() {
         if (!roomManagerList) return;
         while (roomManagerList.firstChild) roomManagerList.removeChild(roomManagerList.firstChild);
@@ -794,6 +1014,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 ${item.zone ? `<span style="font-size:0.7rem;color:#6366f1;background:rgba(99,102,241,0.1);padding:1px 6px;border-radius:8px;border:1px solid rgba(99,102,241,0.2);flex-shrink:0;white-space:nowrap;">${item.zone}</span>` : ''}
                                 ${item.memo ? `<span style="font-size:0.75rem;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:90px;flex-shrink:0;">${item.memo}</span>` : ''}
                                 ${photoTag}
+                                ${makeItemEditButton(item.id, 13)}
                                 <button class="item-delete-btn" data-id="${item.id}" data-name="${item.name}" style="background:none;border:none;color:#ef4444;cursor:pointer;padding:4px;opacity:0.35;transition:opacity 0.2s;flex-shrink:0;" title="삭제">
                                     <i data-lucide="x" style="width:13px;height:13px;"></i>
                                 </button>
@@ -830,6 +1051,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         allCheckboxesList.push(cb);
                         cb.addEventListener('change', () => syncGlobalAction());
                     });
+                    attachItemEditButtons(roomCard);
                     roomCard.querySelectorAll('.item-delete-btn').forEach(delBtn => {
                         delBtn.addEventListener('click', (e) => {
                             e.stopPropagation();
@@ -900,6 +1122,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <span style="flex:1; color:var(--text-main); font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.name}</span>
                                 ${item.zone ? `<span style="font-size:0.7rem;color:#6366f1;background:rgba(99,102,241,0.1);padding:1px 6px;border-radius:8px;border:1px solid rgba(99,102,241,0.2);flex-shrink:0;white-space:nowrap;">${item.zone}</span>` : ''}
                                 ${photoTag}
+                                ${makeItemEditButton(item.id, 12)}
                                 <button class="item-delete-btn" data-id="${item.id}" data-name="${item.name}" style="background:none;border:none;color:#ef4444;cursor:pointer;padding:2px;opacity:0.4;transition:opacity 0.2s;flex-shrink:0;" title="삭제">
                                     <i data-lucide="x" style="width:12px;height:12px;"></i>
                                 </button>
@@ -939,6 +1162,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         allCheckboxesList.push(cb);
                         cb.addEventListener('change', () => syncGlobalAction());
                     });
+                    attachItemEditButtons(roomCard);
                     roomCard.querySelectorAll('.item-delete-btn').forEach(delBtn => {
                         delBtn.addEventListener('click', (e) => {
                             e.stopPropagation();
@@ -1003,7 +1227,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div style="position:absolute; top:8px; left:8px;">
                         <input type="checkbox" class="item-checkbox" data-id="${item.id}" style="width:18px;height:18px;cursor:pointer;accent-color:var(--primary-color);">
                     </div>
-                    <div style="position:absolute; top:6px; right:6px;">
+                    <div style="position:absolute; top:6px; right:6px;display:flex;align-items:center;gap:2px;">
+                        ${makeItemEditButton(item.id, 14)}
                         <button class="item-delete-btn" data-id="${item.id}" data-name="${item.name}" style="background:none;border:none;color:#ef4444;cursor:pointer;padding:4px;opacity:0.5;transition:opacity 0.2s;" title="삭제">
                             <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
                         </button>
@@ -1037,6 +1262,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         allCheckboxesList.push(cb);
                         cb.addEventListener('change', () => syncGlobalAction());
                     }
+                    attachItemEditButtons(card);
                     const delBtn = card.querySelector('.item-delete-btn');
                     if (delBtn) {
                         delBtn.addEventListener('click', (e) => {
@@ -1092,6 +1318,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <span style="flex:1; color:var(--text-main); font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.name}</span>
                             ${item.zone ? `<span style="font-size:0.7rem;color:#6366f1;background:rgba(99,102,241,0.1);padding:1px 6px;border-radius:8px;border:1px solid rgba(99,102,241,0.2);flex-shrink:0;white-space:nowrap;">${item.zone}</span>` : ''}
                             ${photoTag}
+                            ${makeItemEditButton(item.id, 12)}
                             <button class="item-delete-btn" data-id="${item.id}" data-name="${item.name}" style="background:none;border:none;color:#ef4444;cursor:pointer;padding:2px;opacity:0.4;transition:opacity 0.2s;flex-shrink:0;" title="삭제">
                                 <i data-lucide="x" style="width:12px;height:12px;"></i>
                             </button>
@@ -1132,6 +1359,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     allCheckboxesList.push(cb);
                     cb.addEventListener('change', () => syncGlobalAction());
                 });
+                attachItemEditButtons(roomCard);
                 roomCard.querySelectorAll('.item-delete-btn').forEach(delBtn => {
                     delBtn.addEventListener('click', (e) => {
                         e.stopPropagation();
