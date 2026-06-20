@@ -1,6 +1,14 @@
 document.addEventListener('DOMContentLoaded', () => {
     const APP_UPDATE_HISTORY = [
         {
+            version: 'v38',
+            date: '2026.06.20.',
+            items: [
+                '서버 동기화 우회 경로 추가',
+                '모바일-맥북 연동 안정화'
+            ]
+        },
+        {
             version: 'v37',
             date: '2026.06.20.',
             items: [

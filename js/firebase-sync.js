@@ -6,6 +6,7 @@
 
 const SUPABASE_URL = 'https://koddftotebkjomwmauly.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_r_2SdgNd8Rl5nHexSEGxAQ_KX-zJE2I';
+const CLOUD_SYNC_FUNCTION_URL = `${SUPABASE_URL}/functions/v1/item-finder-sync`;
 
 const headers = {
     'apikey': SUPABASE_KEY,
@@ -38,6 +39,34 @@ async function safeJson(res) {
         return await res.json();
     } catch(e) {
         return null;
+    }
+}
+
+async function callSyncFunction(action, body = {}) {
+    try {
+        const res = await fetch(CLOUD_SYNC_FUNCTION_URL, {
+            method: 'POST',
+            headers: {
+                'apikey': SUPABASE_KEY,
+                'Authorization': 'Bearer ' + SUPABASE_KEY,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ action, ...body })
+        });
+        const data = await safeJson(res);
+        if (!res.ok) {
+            return {
+                ok: false,
+                status: res.status,
+                message: data && (data.error || data.message || data.code)
+                    ? `${data.code || ''} ${data.error || data.message || ''}`.trim()
+                    : `HTTP ${res.status}`,
+                data
+            };
+        }
+        return { ok: true, status: res.status, data };
+    } catch(e) {
+        return { ok: false, status: 0, message: e.message || 'Edge Function 요청 실패', data: null };
     }
 }
 
@@ -120,6 +149,7 @@ function buildLocalGroupPayload(groupId) {
 
 async function fetchGroupById(groupId) {
     if (!groupId) return null;
+    let directMessage = '';
     try {
         const res = await fetch(
             `${SUPABASE_URL}/rest/v1/groups?group_id=eq.${encodeURIComponent(groupId)}&select=*`,
@@ -127,21 +157,32 @@ async function fetchGroupById(groupId) {
         );
         const data = await safeJson(res);
         if (!res.ok) {
-            lastCloudReadStatus = {
-                ok: false,
-                status: res.status,
-                message: data && (data.message || data.code) ? `${data.code || ''} ${data.message || ''}`.trim() : `HTTP ${res.status}`
-            };
-            return null;
+            directMessage = data && (data.message || data.code) ? `${data.code || ''} ${data.message || ''}`.trim() : `HTTP ${res.status}`;
+        } else {
+            lastCloudReadStatus = { ok: true, status: res.status, message: 'REST 읽기 성공' };
+            if (Array.isArray(data) && data.length > 0) return data[0];
+            directMessage = 'REST 서버 그룹 없음';
         }
-        lastCloudReadStatus = { ok: true, status: res.status, message: '읽기 성공' };
-        if (!Array.isArray(data) || data.length === 0) return null;
-        return data[0];
     } catch(e) {
         console.warn('[Supabase] 그룹 조회 실패:', e.message);
-        lastCloudReadStatus = { ok: false, status: 0, message: e.message || '읽기 실패' };
-        return null;
+        directMessage = e.message || 'REST 읽기 실패';
     }
+
+    const edge = await callSyncFunction('getGroup', { group_id: groupId });
+    if (edge.ok) {
+        lastCloudReadStatus = {
+            ok: true,
+            status: edge.status,
+            message: edge.data && edge.data.group ? 'Edge Function 읽기 성공' : `Edge Function 서버 그룹 없음 (${directMessage})`
+        };
+        return edge.data && edge.data.group ? edge.data.group : null;
+    }
+    lastCloudReadStatus = {
+        ok: false,
+        status: edge.status,
+        message: `REST: ${directMessage} / Edge: ${edge.message}`
+    };
+    return null;
 }
 
 async function saveGroupPayload(payload) {
@@ -204,6 +245,24 @@ async function saveGroupPayload(payload) {
         method: 'all',
         status: 0,
         message: errors.join(' / ')
+    };
+
+    const edge = await callSyncFunction('saveGroup', { payload });
+    if (edge.ok) {
+        lastCloudSaveStatus = {
+            ok: true,
+            method: 'edge',
+            status: edge.status,
+            message: 'Edge Function 저장 성공'
+        };
+        return true;
+    }
+
+    lastCloudSaveStatus = {
+        ok: false,
+        method: 'all',
+        status: edge.status,
+        message: `${errors.join(' / ')} / edge: ${edge.message}`
     };
     console.warn('[Supabase] 그룹 저장 실패:', lastCloudSaveStatus.message);
     return false;
@@ -305,12 +364,22 @@ async function upsertUserGroup(groupId) {
         if (!res.ok) {
             const error = await safeJson(res);
             console.warn('[Supabase] 사용자-그룹 연결 저장 실패:', error && (error.message || error.code) ? `${error.code || ''} ${error.message || ''}` : res.status);
+        } else {
+            return true;
         }
-        return res.ok;
     } catch(e) {
         console.warn('[Supabase] 사용자-그룹 연결 저장 실패:', e.message);
-        return false;
     }
+
+    const edge = await callSyncFunction('upsertUserGroup', {
+        user_id: currentUserId,
+        group_id: groupId,
+        nickname
+    });
+    if (!edge.ok) {
+        console.warn('[Supabase] 사용자-그룹 Edge 연결 저장 실패:', edge.message);
+    }
+    return edge.ok;
 }
 
 async function chooseBestGroupMapping(groupRows) {
@@ -491,9 +560,18 @@ async function getOrCreateGroup() {
             `${SUPABASE_URL}/rest/v1/user_groups?user_id=eq.${currentUserId}&select=group_id,nickname`,
             { headers }
         );
-        const data = await safeJson(res);
+        let data = await safeJson(res);
+        let userGroupsOk = res.ok;
 
-        if (res.ok && Array.isArray(data) && data.length > 0) {
+        if (!userGroupsOk) {
+            const edgeGroups = await callSyncFunction('getUserGroups', { user_id: currentUserId });
+            if (edgeGroups.ok) {
+                data = edgeGroups.data && Array.isArray(edgeGroups.data.rows) ? edgeGroups.data.rows : [];
+                userGroupsOk = true;
+            }
+        }
+
+        if (userGroupsOk && Array.isArray(data) && data.length > 0) {
             const bestGroup = await chooseBestGroupMapping(data);
             currentGroupId = bestGroup.group_id;
             localStorage.setItem('kc_group_id', currentGroupId);
@@ -509,7 +587,7 @@ async function getOrCreateGroup() {
             return currentGroupId;
         }
 
-        if (!res.ok) {
+        if (!userGroupsOk) {
             console.warn('[Supabase] 그룹 연결 조회 실패:', data && (data.message || data.code) ? `${data.code || ''} ${data.message || ''}` : res.status);
         }
 
@@ -654,18 +732,12 @@ async function loadFromCloud() {
     if (!currentGroupId) return false;
 
     try {
-        const res = await fetch(
-            `${SUPABASE_URL}/rest/v1/groups?group_id=eq.${currentGroupId}&select=*`,
-            { headers }
-        );
-        const data = await safeJson(res);
-
-        if (!res.ok || !data || data.length === 0) {
+        const cloud = await fetchGroupById(currentGroupId);
+        if (!cloud) {
             await syncToCloud();
             return false;
         }
 
-        const cloud = data[0];
         const cloudItems = cloud.items || [];
         const localItems = JSON.parse(localStorage.getItem('itemFinder_data') || '[]');
         const cloudItemsJson = JSON.stringify(cloudItems);
@@ -751,8 +823,13 @@ async function getCloudSyncDiagnostics() {
             );
             const mappingData = await safeJson(mappingRes);
             mappings = mappingRes.ok && Array.isArray(mappingData) ? mappingData : [];
+            if (!mappingRes.ok) {
+                const edgeGroups = await callSyncFunction('getUserGroups', { user_id: currentUserId });
+                mappings = edgeGroups.ok && edgeGroups.data && Array.isArray(edgeGroups.data.rows) ? edgeGroups.data.rows : [];
+            }
         } catch(e) {
-            mappings = [];
+            const edgeGroups = await callSyncFunction('getUserGroups', { user_id: currentUserId });
+            mappings = edgeGroups.ok && edgeGroups.data && Array.isArray(edgeGroups.data.rows) ? edgeGroups.data.rows : [];
         }
     }
 
