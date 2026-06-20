@@ -39,6 +39,145 @@ async function safeJson(res) {
     }
 }
 
+function getItemTime(item) {
+    const timeValue = item && (item.updatedAt || item.createdAt);
+    const time = timeValue ? new Date(timeValue).getTime() : 0;
+    return Number.isFinite(time) ? time : 0;
+}
+
+function mergeItems(...itemLists) {
+    const mergedMap = new Map();
+    itemLists.flat().filter(Boolean).forEach(item => {
+        if (!item || !item.id) return;
+        const existing = mergedMap.get(item.id);
+        if (!existing || getItemTime(item) >= getItemTime(existing)) {
+            mergedMap.set(item.id, item);
+        }
+    });
+    return Array.from(mergedMap.values());
+}
+
+function mergeStringLists(...lists) {
+    const seen = new Set();
+    lists.flat().filter(Boolean).forEach(value => {
+        if (typeof value === 'string' && value.trim()) seen.add(value);
+    });
+    return Array.from(seen);
+}
+
+function normalizeRooms(rawRooms) {
+    if (!rawRooms) return { list: [], zones: {} };
+    if (Array.isArray(rawRooms)) return { list: rawRooms, zones: {} };
+    return {
+        list: Array.isArray(rawRooms.list) ? rawRooms.list : [],
+        zones: rawRooms.zones && typeof rawRooms.zones === 'object' ? rawRooms.zones : {}
+    };
+}
+
+function mergeZones(...zoneObjects) {
+    const merged = {};
+    zoneObjects.filter(Boolean).forEach(zones => {
+        Object.entries(zones).forEach(([room, list]) => {
+            merged[room] = mergeStringLists(merged[room] || [], Array.isArray(list) ? list : []);
+        });
+    });
+    return merged;
+}
+
+function mergeBackups(...backupLists) {
+    const mergedMap = new Map();
+    backupLists.flat().filter(Boolean).forEach(backup => {
+        if (!backup) return;
+        const key = backup.id || `${backup.date || ''}-${backup.count || ''}`;
+        if (!key) return;
+        const existing = mergedMap.get(key);
+        const backupTime = backup.date ? new Date(backup.date).getTime() : 0;
+        const existingTime = existing && existing.date ? new Date(existing.date).getTime() : 0;
+        if (!existing || backupTime >= existingTime) mergedMap.set(key, backup);
+    });
+    return Array.from(mergedMap.values()).sort((a, b) => {
+        const bTime = b.date ? new Date(b.date).getTime() : 0;
+        const aTime = a.date ? new Date(a.date).getTime() : 0;
+        return bTime - aTime;
+    });
+}
+
+function buildLocalGroupPayload(groupId) {
+    return {
+        group_id: groupId,
+        items: JSON.parse(localStorage.getItem('itemFinder_data') || '[]'),
+        rooms: {
+            list: JSON.parse(localStorage.getItem('itemFinder_rooms') || '[]'),
+            zones: JSON.parse(localStorage.getItem('itemFinder_zones') || '{}')
+        },
+        backups: JSON.parse(localStorage.getItem('itemFinder_backups') || '[]'),
+        theme: localStorage.getItem('itemFinder_theme') || 'light',
+        updated_at: new Date().toISOString()
+    };
+}
+
+async function fetchGroupById(groupId) {
+    if (!groupId) return null;
+    try {
+        const res = await fetch(
+            `${SUPABASE_URL}/rest/v1/groups?group_id=eq.${encodeURIComponent(groupId)}&select=*`,
+            { headers }
+        );
+        const data = await safeJson(res);
+        if (!res.ok || !Array.isArray(data) || data.length === 0) return null;
+        return data[0];
+    } catch(e) {
+        console.warn('[Supabase] 그룹 조회 실패:', e.message);
+        return null;
+    }
+}
+
+async function saveGroupPayload(payload) {
+    try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/groups?on_conflict=group_id`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(payload)
+        });
+        if (!res.ok) {
+            const error = await safeJson(res);
+            console.warn('[Supabase] 그룹 저장 실패:', error && (error.message || error.code) ? `${error.code || ''} ${error.message || ''}` : res.status);
+            return false;
+        }
+        return true;
+    } catch(e) {
+        console.warn('[Supabase] 그룹 저장 실패:', e.message);
+        return false;
+    }
+}
+
+function mergeGroupPayload(targetGroupId, ...sources) {
+    const local = buildLocalGroupPayload(targetGroupId);
+    const normalizedRooms = sources.map(source => normalizeRooms(source && source.rooms));
+    const payload = {
+        group_id: targetGroupId,
+        items: mergeItems(local.items, ...sources.map(source => source && Array.isArray(source.items) ? source.items : [])),
+        rooms: {
+            list: mergeStringLists(local.rooms.list, ...normalizedRooms.map(room => room.list)),
+            zones: mergeZones(local.rooms.zones, ...normalizedRooms.map(room => room.zones))
+        },
+        backups: mergeBackups(local.backups, ...sources.map(source => source && Array.isArray(source.backups) ? source.backups : [])),
+        theme: local.theme || (sources.find(source => source && source.theme) || {}).theme || 'light',
+        updated_at: new Date().toISOString()
+    };
+    return payload;
+}
+
+function applyGroupPayloadToLocal(payload) {
+    if (!payload) return;
+    localStorage.setItem('itemFinder_data', JSON.stringify(Array.isArray(payload.items) ? payload.items : []));
+    const rooms = normalizeRooms(payload.rooms);
+    if (rooms.list.length > 0) localStorage.setItem('itemFinder_rooms', JSON.stringify(rooms.list));
+    if (Object.keys(rooms.zones).length > 0) localStorage.setItem('itemFinder_zones', JSON.stringify(rooms.zones));
+    if (Array.isArray(payload.backups) && payload.backups.length > 0) localStorage.setItem('itemFinder_backups', JSON.stringify(payload.backups));
+    if (payload.theme) localStorage.setItem('itemFinder_theme', payload.theme);
+}
+
 function hasLocalCloudData() {
     const items = JSON.parse(localStorage.getItem('itemFinder_data') || '[]');
     const rooms = JSON.parse(localStorage.getItem('itemFinder_rooms') || '[]');
@@ -61,22 +200,7 @@ async function ensureGroupRow(groupId, options = {}) {
 
         if (!allowEmptyCreate && !hasLocalCloudData()) return false;
 
-        const createRes = await fetch(`${SUPABASE_URL}/rest/v1/groups`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({
-                group_id: groupId,
-                items: JSON.parse(localStorage.getItem('itemFinder_data') || '[]'),
-                rooms: {
-                    list: JSON.parse(localStorage.getItem('itemFinder_rooms') || '[]'),
-                    zones: JSON.parse(localStorage.getItem('itemFinder_zones') || '{}')
-                },
-                backups: JSON.parse(localStorage.getItem('itemFinder_backups') || '[]'),
-                theme: localStorage.getItem('itemFinder_theme') || 'light',
-                updated_at: new Date().toISOString()
-            })
-        });
-        return createRes.ok;
+        return await saveGroupPayload(buildLocalGroupPayload(groupId));
     } catch(e) {
         console.warn('[Supabase] 그룹 행 확인/생성 실패:', e.message);
         return false;
@@ -87,6 +211,10 @@ async function upsertUserGroup(groupId) {
     if (!currentUserId || !groupId) return false;
     const nickname = localStorage.getItem('kc_nickname') || '회원';
     try {
+        await fetch(`${SUPABASE_URL}/rest/v1/user_groups?user_id=eq.${encodeURIComponent(currentUserId)}`, {
+            method: 'DELETE',
+            headers
+        });
         const res = await fetch(`${SUPABASE_URL}/rest/v1/user_groups`, {
             method: 'POST',
             headers,
@@ -97,6 +225,10 @@ async function upsertUserGroup(groupId) {
                 joined_at: new Date().toISOString()
             })
         });
+        if (!res.ok) {
+            const error = await safeJson(res);
+            console.warn('[Supabase] 사용자-그룹 연결 저장 실패:', error && (error.message || error.code) ? `${error.code || ''} ${error.message || ''}` : res.status);
+        }
         return res.ok;
     } catch(e) {
         console.warn('[Supabase] 사용자-그룹 연결 저장 실패:', e.message);
@@ -301,9 +433,19 @@ async function getOrCreateGroup() {
         }
 
         // 매핑이 없거나 조회가 막힌 경우에도 같은 카카오 계정은 같은 개인 그룹을 보게 한다.
-        const fallbackGroupId = currentGroupId || localStorage.getItem('kc_group_id') || getPersonalGroupId();
+        // 예전 버전에서 기기별 임시 그룹이 생겼다면 고정 개인 그룹으로 병합한다.
+        const previousGroupId = currentGroupId || localStorage.getItem('kc_group_id') || null;
+        const fallbackGroupId = getPersonalGroupId();
         if (!fallbackGroupId) return null;
-        await ensureGroupRow(fallbackGroupId, { allowEmptyCreate: false });
+        const previousGroup = previousGroupId && previousGroupId !== fallbackGroupId ? await fetchGroupById(previousGroupId) : null;
+        const fallbackGroup = await fetchGroupById(fallbackGroupId);
+        const mergedPayload = mergeGroupPayload(fallbackGroupId, fallbackGroup, previousGroup);
+        if (hasLocalCloudData() || fallbackGroup || previousGroup) {
+            await saveGroupPayload(mergedPayload);
+            applyGroupPayloadToLocal(mergedPayload);
+        } else {
+            await ensureGroupRow(fallbackGroupId, { allowEmptyCreate: false });
+        }
         await upsertUserGroup(fallbackGroupId);
 
         currentGroupId = fallbackGroupId;
@@ -397,46 +539,30 @@ async function createInviteCode() {
 // 그룹 데이터를 클라우드에 저장
 async function syncToCloud() {
     if (!currentGroupId) await getOrCreateGroup();
-    if (!currentGroupId) return;
+    if (!currentGroupId) return false;
 
     try {
-        await fetch(`${SUPABASE_URL}/rest/v1/groups`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({
-                group_id: currentGroupId,
-                items: JSON.parse(localStorage.getItem('itemFinder_data') || '[]'),
-                rooms: {
-                    list: JSON.parse(localStorage.getItem('itemFinder_rooms') || '[]'),
-                    zones: JSON.parse(localStorage.getItem('itemFinder_zones') || '{}')
-                },
-                backups: JSON.parse(localStorage.getItem('itemFinder_backups') || '[]'),
-                theme: localStorage.getItem('itemFinder_theme') || 'light',
-                updated_at: new Date().toISOString()
-            })
-        });
+        return await saveGroupPayload(buildLocalGroupPayload(currentGroupId));
     } catch (e) {
         console.warn('[Supabase] 저장 실패:', e.message);
+        return false;
     }
 }
 
 // 백업만 클라우드에 저장
 async function syncBackupsToCloud() {
     if (!currentGroupId) await getOrCreateGroup();
-    if (!currentGroupId) return;
+    if (!currentGroupId) return false;
 
     try {
-        await fetch(`${SUPABASE_URL}/rest/v1/groups`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({
-                group_id: currentGroupId,
-                backups: JSON.parse(localStorage.getItem('itemFinder_backups') || '[]'),
-                updated_at: new Date().toISOString()
-            })
-        });
+        const existing = await fetchGroupById(currentGroupId);
+        const payload = mergeGroupPayload(currentGroupId, existing);
+        payload.backups = JSON.parse(localStorage.getItem('itemFinder_backups') || '[]');
+        payload.updated_at = new Date().toISOString();
+        return await saveGroupPayload(payload);
     } catch (e) {
         console.warn('[Supabase] 백업 저장 실패:', e.message);
+        return false;
     }
 }
 
@@ -451,9 +577,9 @@ async function loadFromCloud() {
             `${SUPABASE_URL}/rest/v1/groups?group_id=eq.${currentGroupId}&select=*`,
             { headers }
         );
-        const data = await res.json();
+        const data = await safeJson(res);
 
-        if (!data || data.length === 0) {
+        if (!res.ok || !data || data.length === 0) {
             await syncToCloud();
             return false;
         }
@@ -462,11 +588,6 @@ async function loadFromCloud() {
         const cloudItems = cloud.items || [];
         const localItems = JSON.parse(localStorage.getItem('itemFinder_data') || '[]');
         const cloudItemsJson = JSON.stringify(cloudItems);
-        const getItemTime = item => {
-            const timeValue = item && (item.updatedAt || item.createdAt);
-            const time = timeValue ? new Date(timeValue).getTime() : 0;
-            return Number.isFinite(time) ? time : 0;
-        };
 
         // 클라우드 + 로컬 병합 (id 기준, updatedAt/createdAt 최신 우선)
         const mergedMap = new Map();
@@ -526,6 +647,87 @@ async function updateNicknameInCloud(nickname) {
         console.warn('[Supabase] 닉네임 업데이트 실패:', e.message);
     }
 }
+
+async function getCloudSyncDiagnostics() {
+    if (window.restoreKakaoCloudIdentity) {
+        await restoreKakaoCloudIdentity({ force: true }).catch(() => {});
+    } else {
+        await getOrCreateGroup().catch(() => {});
+    }
+
+    const localItems = JSON.parse(localStorage.getItem('itemFinder_data') || '[]');
+    const localRooms = JSON.parse(localStorage.getItem('itemFinder_rooms') || '[]');
+    const localZones = JSON.parse(localStorage.getItem('itemFinder_zones') || '{}');
+    const personalGroupId = getPersonalGroupId();
+    let mappings = [];
+    let groups = [];
+
+    if (currentUserId) {
+        try {
+            const mappingRes = await fetch(
+                `${SUPABASE_URL}/rest/v1/user_groups?user_id=eq.${encodeURIComponent(currentUserId)}&select=group_id,nickname,joined_at`,
+                { headers }
+            );
+            const mappingData = await safeJson(mappingRes);
+            mappings = mappingRes.ok && Array.isArray(mappingData) ? mappingData : [];
+        } catch(e) {
+            mappings = [];
+        }
+    }
+
+    const groupIds = Array.from(new Set([
+        currentGroupId,
+        localStorage.getItem('kc_group_id'),
+        personalGroupId,
+        ...mappings.map(row => row.group_id)
+    ].filter(Boolean)));
+
+    for (const groupId of groupIds) {
+        const group = await fetchGroupById(groupId);
+        groups.push({
+            groupId,
+            exists: !!group,
+            itemCount: group && Array.isArray(group.items) ? group.items.length : 0,
+            roomCount: group ? normalizeRooms(group.rooms).list.length : 0,
+            zoneCount: group ? Object.values(normalizeRooms(group.rooms).zones).reduce((sum, list) => sum + (Array.isArray(list) ? list.length : 0), 0) : 0,
+            updatedAt: group && group.updated_at ? group.updated_at : ''
+        });
+    }
+
+    return {
+        userId: currentUserId || localStorage.getItem('kc_user_id') || '',
+        currentGroupId: currentGroupId || '',
+        storedGroupId: localStorage.getItem('kc_group_id') || '',
+        personalGroupId: personalGroupId || '',
+        localItemCount: Array.isArray(localItems) ? localItems.length : 0,
+        localRoomCount: Array.isArray(localRooms) ? localRooms.length : 0,
+        localZoneCount: localZones && typeof localZones === 'object' ? Object.values(localZones).reduce((sum, list) => sum + (Array.isArray(list) ? list.length : 0), 0) : 0,
+        mappings,
+        groups
+    };
+}
+
+function formatCloudSyncDiagnostics(diag) {
+    const groupLines = (diag.groups || []).map(group =>
+        `- ${group.groupId}: ${group.exists ? `서버 물건 ${group.itemCount}개 / 방 ${group.roomCount}개 / 구역 ${group.zoneCount}개 / ${group.updatedAt || '날짜 없음'}` : '서버에 없음'}`
+    ).join('\n') || '- 확인된 서버 그룹 없음';
+    return [
+        '[동기화 상태]',
+        `카카오 사용자 ID: ${diag.userId || '없음'}`,
+        `현재 그룹 ID: ${diag.currentGroupId || '없음'}`,
+        `저장된 그룹 ID: ${diag.storedGroupId || '없음'}`,
+        `고정 개인 그룹 ID: ${diag.personalGroupId || '없음'}`,
+        '',
+        `[이 기기 로컬 데이터]`,
+        `물건 ${diag.localItemCount}개 / 방 ${diag.localRoomCount}개 / 구역 ${diag.localZoneCount}개`,
+        '',
+        '[서버 그룹 데이터]',
+        groupLines
+    ].join('\n');
+}
+
+window.getCloudSyncDiagnostics = getCloudSyncDiagnostics;
+window.formatCloudSyncDiagnostics = formatCloudSyncDiagnostics;
 
 // 전역 노출
 window.syncToCloud = syncToCloud;

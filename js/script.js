@@ -1,6 +1,14 @@
 document.addEventListener('DOMContentLoaded', () => {
     const APP_UPDATE_HISTORY = [
         {
+            version: 'v36',
+            date: '2026.06.20.',
+            items: [
+                '기기별 임시 그룹 자동 병합',
+                '동기화 상태 확인 기능 추가'
+            ]
+        },
+        {
             version: 'v35',
             date: '2026.06.20.',
             items: [
@@ -488,6 +496,33 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             showToast('✅ 완료! 화면을 새로고침합니다.');
             setTimeout(() => window.location.reload(), 1000);
+        });
+    }
+
+    const btnSyncDiagnostics = document.getElementById('btnSyncDiagnostics');
+    const syncDiagnosticsOutput = document.getElementById('syncDiagnosticsOutput');
+    if (btnSyncDiagnostics && syncDiagnosticsOutput) {
+        btnSyncDiagnostics.addEventListener('click', async () => {
+            btnSyncDiagnostics.disabled = true;
+            btnSyncDiagnostics.textContent = '확인 중...';
+            try {
+                if (!window.getCloudSyncDiagnostics || !window.formatCloudSyncDiagnostics) {
+                    throw new Error('진단 기능을 불러오지 못했어요.');
+                }
+                const diagnostics = await window.getCloudSyncDiagnostics();
+                const text = window.formatCloudSyncDiagnostics(diagnostics);
+                syncDiagnosticsOutput.textContent = text;
+                syncDiagnosticsOutput.style.display = 'block';
+                await copyText(text).catch(() => false);
+                showToast('동기화 상태를 확인했어요. 내용도 복사했습니다.');
+            } catch(e) {
+                syncDiagnosticsOutput.textContent = '동기화 상태 확인에 실패했어요.\n' + (e.message || e);
+                syncDiagnosticsOutput.style.display = 'block';
+                showToast('동기화 상태 확인에 실패했어요.');
+            } finally {
+                btnSyncDiagnostics.disabled = false;
+                btnSyncDiagnostics.textContent = '동기화 상태 확인';
+            }
         });
     }
 

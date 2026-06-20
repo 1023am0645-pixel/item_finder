@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    window.ITEM_FINDER_APP_VERSION = window.ITEM_FINDER_APP_VERSION || 'v35';
+    window.ITEM_FINDER_APP_VERSION = window.ITEM_FINDER_APP_VERSION || 'v36';
     window.ITEM_FINDER_APP_RELEASE_DATE = window.ITEM_FINDER_APP_RELEASE_DATE || '2026.06.20.';
     if (window.recordUsageEvent) window.recordUsageEvent('visit').catch(() => {});
 
