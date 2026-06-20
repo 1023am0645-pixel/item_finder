@@ -1,6 +1,14 @@
 document.addEventListener('DOMContentLoaded', () => {
     const APP_UPDATE_HISTORY = [
         {
+            version: 'v37',
+            date: '2026.06.20.',
+            items: [
+                '모바일 기록 서버 업로드 복구',
+                '서버 저장 실패 원인 표시'
+            ]
+        },
+        {
             version: 'v36',
             date: '2026.06.20.',
             items: [

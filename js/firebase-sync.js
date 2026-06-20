@@ -16,6 +16,8 @@ const headers = {
 
 let currentUserId = null;
 let currentGroupId = null;
+let lastCloudSaveStatus = null;
+let lastCloudReadStatus = null;
 
 const SUPPORT_KAKAO_CUSTOMER_CENTER_URL = 'https://pf.kakao.com/_RexmbX/chat';
 const SUPPORT_CHATBOT_URL = '';
@@ -124,15 +126,90 @@ async function fetchGroupById(groupId) {
             { headers }
         );
         const data = await safeJson(res);
-        if (!res.ok || !Array.isArray(data) || data.length === 0) return null;
+        if (!res.ok) {
+            lastCloudReadStatus = {
+                ok: false,
+                status: res.status,
+                message: data && (data.message || data.code) ? `${data.code || ''} ${data.message || ''}`.trim() : `HTTP ${res.status}`
+            };
+            return null;
+        }
+        lastCloudReadStatus = { ok: true, status: res.status, message: '읽기 성공' };
+        if (!Array.isArray(data) || data.length === 0) return null;
         return data[0];
     } catch(e) {
         console.warn('[Supabase] 그룹 조회 실패:', e.message);
+        lastCloudReadStatus = { ok: false, status: 0, message: e.message || '읽기 실패' };
         return null;
     }
 }
 
 async function saveGroupPayload(payload) {
+    const attempts = [
+        {
+            label: 'upsert',
+            url: `${SUPABASE_URL}/rest/v1/groups?on_conflict=group_id`,
+            method: 'POST',
+            body: payload
+        },
+        {
+            label: 'insert',
+            url: `${SUPABASE_URL}/rest/v1/groups`,
+            method: 'POST',
+            body: payload
+        },
+        {
+            label: 'patch',
+            url: `${SUPABASE_URL}/rest/v1/groups?group_id=eq.${encodeURIComponent(payload.group_id)}`,
+            method: 'PATCH',
+            body: {
+                items: payload.items,
+                rooms: payload.rooms,
+                backups: payload.backups,
+                theme: payload.theme,
+                updated_at: payload.updated_at
+            }
+        }
+    ];
+
+    const errors = [];
+    for (const attempt of attempts) {
+        try {
+            const res = await fetch(attempt.url, {
+                method: attempt.method,
+                headers,
+                body: JSON.stringify(attempt.body)
+            });
+            if (res.ok) {
+                lastCloudSaveStatus = {
+                    ok: true,
+                    method: attempt.label,
+                    status: res.status,
+                    message: '저장 성공'
+                };
+                return true;
+            }
+            const error = await safeJson(res);
+            const message = error && (error.message || error.code)
+                ? `${error.code || ''} ${error.message || ''}`.trim()
+                : `HTTP ${res.status}`;
+            errors.push(`${attempt.label}: ${message}`);
+        } catch(e) {
+            errors.push(`${attempt.label}: ${e.message || '요청 실패'}`);
+        }
+    }
+
+    lastCloudSaveStatus = {
+        ok: false,
+        method: 'all',
+        status: 0,
+        message: errors.join(' / ')
+    };
+    console.warn('[Supabase] 그룹 저장 실패:', lastCloudSaveStatus.message);
+    return false;
+}
+
+async function saveGroupPayloadLegacy(payload) {
     try {
         const res = await fetch(`${SUPABASE_URL}/rest/v1/groups?on_conflict=group_id`, {
             method: 'POST',
@@ -420,6 +497,10 @@ async function getOrCreateGroup() {
             const bestGroup = await chooseBestGroupMapping(data);
             currentGroupId = bestGroup.group_id;
             localStorage.setItem('kc_group_id', currentGroupId);
+            const existingGroup = await fetchGroupById(currentGroupId);
+            if (!existingGroup && hasLocalCloudData()) {
+                await saveGroupPayload(buildLocalGroupPayload(currentGroupId));
+            }
             // 저장된 닉네임이 있으면 자동 복원 (재로그인 시 닉네임 재입력 불필요)
             if (bestGroup.nickname && !localStorage.getItem('kc_nickname')) {
                 localStorage.setItem('kc_nickname', bestGroup.nickname);
@@ -682,6 +763,13 @@ async function getCloudSyncDiagnostics() {
         ...mappings.map(row => row.group_id)
     ].filter(Boolean)));
 
+    if (currentGroupId && hasLocalCloudData()) {
+        const currentGroup = await fetchGroupById(currentGroupId);
+        if (!currentGroup) {
+            await saveGroupPayload(buildLocalGroupPayload(currentGroupId));
+        }
+    }
+
     for (const groupId of groupIds) {
         const group = await fetchGroupById(groupId);
         groups.push({
@@ -702,6 +790,8 @@ async function getCloudSyncDiagnostics() {
         localItemCount: Array.isArray(localItems) ? localItems.length : 0,
         localRoomCount: Array.isArray(localRooms) ? localRooms.length : 0,
         localZoneCount: localZones && typeof localZones === 'object' ? Object.values(localZones).reduce((sum, list) => sum + (Array.isArray(list) ? list.length : 0), 0) : 0,
+        lastRead: lastCloudReadStatus,
+        lastSave: lastCloudSaveStatus,
         mappings,
         groups
     };
@@ -722,7 +812,11 @@ function formatCloudSyncDiagnostics(diag) {
         `물건 ${diag.localItemCount}개 / 방 ${diag.localRoomCount}개 / 구역 ${diag.localZoneCount}개`,
         '',
         '[서버 그룹 데이터]',
-        groupLines
+        groupLines,
+        '',
+        '[최근 서버 통신 결과]',
+        `읽기: ${diag.lastRead ? (diag.lastRead.ok ? '성공' : '실패') + ` (${diag.lastRead.message})` : '기록 없음'}`,
+        `저장: ${diag.lastSave ? (diag.lastSave.ok ? '성공' : '실패') + ` (${diag.lastSave.message})` : '기록 없음'}`
     ].join('\n');
 }
 
