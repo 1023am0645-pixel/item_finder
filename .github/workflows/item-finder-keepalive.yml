@@ -1,0 +1,27 @@
+name: Item Finder Keepalive
+
+on:
+  schedule:
+    # Every Monday 09:10 KST (Sunday 00:10 UTC)
+    - cron: "10 0 * * 0"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check GitHub Pages app
+        run: |
+          curl --fail --silent --show-error --max-time 20 \
+            "https://1023am0645-pixel.github.io/item_finder/version.json"
+
+      - name: Ping Supabase sync function
+        run: |
+          curl --silent --show-error --max-time 30 \
+            --request POST \
+            "https://koddftotebkjomwmauly.supabase.co/functions/v1/item-finder-sync" \
+            --header "apikey: sb_publishable_r_2SdgNd8Rl5nHexSEGxAQ_KX-zJE2I" \
+            --header "Authorization: Bearer sb_publishable_r_2SdgNd8Rl5nHexSEGxAQ_KX-zJE2I" \
+            --header "Content-Type: application/json" \
+            --data '{"action":"getGroup","group_id":"health-check"}'
