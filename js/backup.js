@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
-    window.ITEM_FINDER_APP_VERSION = window.ITEM_FINDER_APP_VERSION || 'v33';
-    window.ITEM_FINDER_APP_RELEASE_DATE = window.ITEM_FINDER_APP_RELEASE_DATE || '2026.05.31.';
+    window.ITEM_FINDER_APP_VERSION = window.ITEM_FINDER_APP_VERSION || 'v34';
+    window.ITEM_FINDER_APP_RELEASE_DATE = window.ITEM_FINDER_APP_RELEASE_DATE || '2026.06.20.';
     if (window.recordUsageEvent) window.recordUsageEvent('visit').catch(() => {});
 
     // Apply saved theme

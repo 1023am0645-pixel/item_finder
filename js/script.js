@@ -1,6 +1,14 @@
 document.addEventListener('DOMContentLoaded', () => {
     const APP_UPDATE_HISTORY = [
         {
+            version: 'v34',
+            date: '2026.06.20.',
+            items: [
+                '기기 간 클라우드 불러오기 안정화',
+                '모바일 로컬 기록 서버 반영 보강'
+            ]
+        },
+        {
             version: 'v33',
             date: '2026.05.31.',
             items: [
@@ -285,7 +293,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (isKakaoLoggedIn && loginOverlay) {
         loginOverlay.style.display = 'none';
         updateAppTitle();
-        if (window.restoreKakaoCloudIdentity) window.restoreKakaoCloudIdentity().catch(() => {});
+        if (window.restoreKakaoCloudIdentity) window.restoreKakaoCloudIdentity({ force: true }).catch(() => {});
         if (window.recordUsageEvent) window.recordUsageEvent('visit').catch(() => {});
         setTimeout(checkVersionAndShowStartupPopup, 300);
     }
@@ -1366,10 +1374,47 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 3000);
     }
 
+    async function refreshCloudDataOnStartup() {
+        if (!isKakaoLoggedIn) return;
+        if (!window.loadFromCloud) return;
+
+        const beforeItems = localStorage.getItem('itemFinder_data') || '[]';
+        try {
+            if (window.restoreKakaoCloudIdentity) {
+                await window.restoreKakaoCloudIdentity({ force: true }).catch(() => {});
+            }
+            const loaded = await window.loadFromCloud().catch(() => false);
+            if (!loaded) return;
+
+            savedItems = JSON.parse(localStorage.getItem('itemFinder_data') || '[]');
+            const cloudRooms = JSON.parse(localStorage.getItem('itemFinder_rooms') || '[]');
+            rooms = Array.isArray(cloudRooms) && cloudRooms.length > 0 ? cloudRooms : defaultRooms;
+            renderRooms();
+
+            const query = itemNameInput.value.trim().toLowerCase();
+            if (query.length > 0) {
+                renderSearchResults(savedItems.filter(item =>
+                    (item.name && item.name.toLowerCase().includes(query)) ||
+                    (item.memo && item.memo.toLowerCase().includes(query))
+                ));
+            } else if (currentSelectedRoom) {
+                renderSearchResults(savedItems.filter(i => i.room === currentSelectedRoom));
+            }
+
+            const afterItems = localStorage.getItem('itemFinder_data') || '[]';
+            if (beforeItems !== afterItems) {
+                showToast('클라우드 데이터를 불러왔습니다.');
+            }
+        } catch(e) {
+            console.warn('Startup cloud refresh skipped:', e);
+        }
+    }
+
     // Init
     renderRooms();
     setupManualAndVersionInfo();
     renderUpdateHistory();
+    refreshCloudDataOnStartup();
     
     // Init Lucide Icons
     if (window.lucide) {

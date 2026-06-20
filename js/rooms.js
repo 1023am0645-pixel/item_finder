@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
-    window.ITEM_FINDER_APP_VERSION = window.ITEM_FINDER_APP_VERSION || 'v33';
-    window.ITEM_FINDER_APP_RELEASE_DATE = window.ITEM_FINDER_APP_RELEASE_DATE || '2026.05.31.';
+    window.ITEM_FINDER_APP_VERSION = window.ITEM_FINDER_APP_VERSION || 'v34';
+    window.ITEM_FINDER_APP_RELEASE_DATE = window.ITEM_FINDER_APP_RELEASE_DATE || '2026.06.20.';
     if (window.recordUsageEvent) window.recordUsageEvent('visit').catch(() => {});
 
     // 새로고침 버튼
@@ -11,6 +11,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (icon) {
                 icon.style.transition = 'transform 0.6s';
                 icon.style.transform = 'rotate(360deg)';
+            }
+            if (window.restoreKakaoCloudIdentity) {
+                await window.restoreKakaoCloudIdentity({ force: true }).catch(() => {});
             }
             if (window.loadFromCloud) {
                 await window.loadFromCloud().catch(() => {});
@@ -320,6 +323,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnRoomsSettingsRefresh) {
         btnRoomsSettingsRefresh.addEventListener('click', async () => {
             btnRoomsSettingsRefresh.textContent = '불러오는 중...';
+            if (window.restoreKakaoCloudIdentity) await window.restoreKakaoCloudIdentity({ force: true }).catch(() => {});
             if (window.loadFromCloud) await window.loadFromCloud().catch(() => {});
             window.location.reload();
         });
@@ -438,6 +442,22 @@ document.addEventListener('DOMContentLoaded', () => {
         if (item.room) allRooms.add(item.room);
     });
     let roomArray = Array.from(allRooms);
+
+    function refreshRoomsStateFromStorage() {
+        savedItems = JSON.parse(localStorage.getItem('itemFinder_data') || '[]');
+        const storedRooms = JSON.parse(localStorage.getItem('itemFinder_rooms') || '[]');
+        defaultRooms = Array.isArray(storedRooms) && storedRooms.length > 0
+            ? storedRooms
+            : ["현관펜트리", "신발장", "공용욕실", "거실", "안방", "방1", "방2", "알파룸", "주방펜트리", "다용도실", "안방베란다", "드레스룸", "화장대"];
+        allRooms = new Set(defaultRooms);
+        savedItems.forEach(item => {
+            if (item.room) allRooms.add(item.room);
+        });
+        roomArray = Array.from(allRooms);
+        if (pickedRooms instanceof Set) {
+            pickedRooms = new Set(roomArray.filter(room => pickedRooms.has(room)));
+        }
+    }
     
     // Room Manager Logic
     const btnManageRoomsInRooms = document.getElementById('btnManageRoomsInRooms');
@@ -1402,8 +1422,33 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    async function refreshCloudRoomsOnStartup() {
+        if (localStorage.getItem('kc_logged_in') !== 'true') return;
+        if (!window.loadFromCloud) return;
+
+        const beforeItems = localStorage.getItem('itemFinder_data') || '[]';
+        try {
+            if (window.restoreKakaoCloudIdentity) {
+                await window.restoreKakaoCloudIdentity({ force: true }).catch(() => {});
+            }
+            const loaded = await window.loadFromCloud().catch(() => false);
+            if (!loaded) return;
+
+            refreshRoomsStateFromStorage();
+            updateViewMode();
+
+            const afterItems = localStorage.getItem('itemFinder_data') || '[]';
+            if (beforeItems !== afterItems) {
+                showToast('클라우드 데이터를 불러왔습니다.');
+            }
+        } catch(e) {
+            console.warn('Rooms startup cloud refresh skipped:', e);
+        }
+    }
+
     // Initial render
     updateViewMode();
+    refreshCloudRoomsOnStartup();
     
     // Hash routing
     if (window.location.hash) {

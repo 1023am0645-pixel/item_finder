@@ -373,13 +373,19 @@ async function loadFromCloud() {
         const cloud = data[0];
         const cloudItems = cloud.items || [];
         const localItems = JSON.parse(localStorage.getItem('itemFinder_data') || '[]');
+        const cloudItemsJson = JSON.stringify(cloudItems);
+        const getItemTime = item => {
+            const timeValue = item && (item.updatedAt || item.createdAt);
+            const time = timeValue ? new Date(timeValue).getTime() : 0;
+            return Number.isFinite(time) ? time : 0;
+        };
 
-        // 클라우드 + 로컬 병합 (id 기준, createdAt 최신 우선)
+        // 클라우드 + 로컬 병합 (id 기준, updatedAt/createdAt 최신 우선)
         const mergedMap = new Map();
         localItems.forEach(item => mergedMap.set(item.id, item));
         cloudItems.forEach(item => {
             const local = mergedMap.get(item.id);
-            if (!local || new Date(item.createdAt) >= new Date(local.createdAt)) {
+            if (!local || getItemTime(item) >= getItemTime(local)) {
                 mergedMap.set(item.id, item);
             }
         });
@@ -406,6 +412,10 @@ async function loadFromCloud() {
         const cloudBackups = cloud.backups || [];
         if (cloudBackups.length > 0) {
             localStorage.setItem('itemFinder_backups', JSON.stringify(cloudBackups));
+        }
+
+        if (JSON.stringify(merged) !== cloudItemsJson) {
+            await syncToCloud();
         }
 
         return true;
@@ -454,8 +464,9 @@ if (storedUserId) currentUserId = storedUserId;
 const storedGroupId = localStorage.getItem('kc_group_id');
 if (storedGroupId) currentGroupId = storedGroupId;
 
-async function restoreKakaoCloudIdentity() {
-    if (currentUserId || localStorage.getItem('kc_logged_in') !== 'true') return false;
+async function restoreKakaoCloudIdentity(options = {}) {
+    const force = options.force === true;
+    if ((!force && currentUserId) || localStorage.getItem('kc_logged_in') !== 'true') return false;
     if (!window.Kakao || !window.Kakao.API) return false;
 
     try {
@@ -472,6 +483,11 @@ async function restoreKakaoCloudIdentity() {
         });
 
         if (!profile || !profile.id) return false;
+        const previousUserId = currentUserId;
+        if (previousUserId && String(previousUserId) !== String(profile.id)) {
+            currentGroupId = null;
+            localStorage.removeItem('kc_group_id');
+        }
         setCloudUserId(profile.id);
         if (profile.properties && profile.properties.nickname && !localStorage.getItem('kc_nickname')) {
             localStorage.setItem('kc_nickname', profile.properties.nickname);
