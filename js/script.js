@@ -1,6 +1,14 @@
 document.addEventListener('DOMContentLoaded', () => {
     const APP_UPDATE_HISTORY = [
         {
+            version: 'v35',
+            date: '2026.06.20.',
+            items: [
+                '같은 계정의 저장 목록 불러오기 보강',
+                '여러 기기 동기화 그룹 선택 오류 개선'
+            ]
+        },
+        {
             version: 'v34',
             date: '2026.06.20.',
             items: [
@@ -472,6 +480,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             showToast('☁️ 클라우드에서 데이터 불러오는 중...');
 
+            if (window.restoreKakaoCloudIdentity) {
+                await window.restoreKakaoCloudIdentity({ force: true }).catch(() => {});
+            }
             if (window.loadFromCloud) {
                 await window.loadFromCloud().catch(() => {});
             }

@@ -26,6 +26,116 @@ function generateId(length = 12) {
     return Math.random().toString(36).substring(2, 2 + length).toUpperCase();
 }
 
+function getPersonalGroupId() {
+    if (!currentUserId) return null;
+    return `USR-${String(currentUserId).replace(/[^a-zA-Z0-9_-]/g, '')}`;
+}
+
+async function safeJson(res) {
+    try {
+        return await res.json();
+    } catch(e) {
+        return null;
+    }
+}
+
+function hasLocalCloudData() {
+    const items = JSON.parse(localStorage.getItem('itemFinder_data') || '[]');
+    const rooms = JSON.parse(localStorage.getItem('itemFinder_rooms') || '[]');
+    const zones = JSON.parse(localStorage.getItem('itemFinder_zones') || '{}');
+    const backups = JSON.parse(localStorage.getItem('itemFinder_backups') || '[]');
+    return items.length > 0 || rooms.length > 0 || Object.keys(zones).length > 0 || backups.length > 0;
+}
+
+async function ensureGroupRow(groupId, options = {}) {
+    if (!groupId) return false;
+    const allowEmptyCreate = options.allowEmptyCreate === true;
+
+    try {
+        const checkRes = await fetch(
+            `${SUPABASE_URL}/rest/v1/groups?group_id=eq.${encodeURIComponent(groupId)}&select=group_id`,
+            { headers }
+        );
+        const existing = await safeJson(checkRes);
+        if (checkRes.ok && Array.isArray(existing) && existing.length > 0) return true;
+
+        if (!allowEmptyCreate && !hasLocalCloudData()) return false;
+
+        const createRes = await fetch(`${SUPABASE_URL}/rest/v1/groups`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+                group_id: groupId,
+                items: JSON.parse(localStorage.getItem('itemFinder_data') || '[]'),
+                rooms: {
+                    list: JSON.parse(localStorage.getItem('itemFinder_rooms') || '[]'),
+                    zones: JSON.parse(localStorage.getItem('itemFinder_zones') || '{}')
+                },
+                backups: JSON.parse(localStorage.getItem('itemFinder_backups') || '[]'),
+                theme: localStorage.getItem('itemFinder_theme') || 'light',
+                updated_at: new Date().toISOString()
+            })
+        });
+        return createRes.ok;
+    } catch(e) {
+        console.warn('[Supabase] 그룹 행 확인/생성 실패:', e.message);
+        return false;
+    }
+}
+
+async function upsertUserGroup(groupId) {
+    if (!currentUserId || !groupId) return false;
+    const nickname = localStorage.getItem('kc_nickname') || '회원';
+    try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/user_groups`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+                user_id: currentUserId,
+                group_id: groupId,
+                nickname,
+                joined_at: new Date().toISOString()
+            })
+        });
+        return res.ok;
+    } catch(e) {
+        console.warn('[Supabase] 사용자-그룹 연결 저장 실패:', e.message);
+        return false;
+    }
+}
+
+async function chooseBestGroupMapping(groupRows) {
+    if (!Array.isArray(groupRows) || groupRows.length === 0) return null;
+    if (groupRows.length === 1) return groupRows[0];
+
+    const scoredRows = [];
+    for (const row of groupRows) {
+        try {
+            const res = await fetch(
+                `${SUPABASE_URL}/rest/v1/groups?group_id=eq.${encodeURIComponent(row.group_id)}&select=group_id,items,updated_at`,
+                { headers }
+            );
+            const data = await safeJson(res);
+            const group = res.ok && Array.isArray(data) && data.length > 0 ? data[0] : null;
+            const itemCount = group && Array.isArray(group.items) ? group.items.length : 0;
+            const updatedAt = group && group.updated_at ? new Date(group.updated_at).getTime() : 0;
+            scoredRows.push({
+                row,
+                itemCount,
+                updatedAt: Number.isFinite(updatedAt) ? updatedAt : 0
+            });
+        } catch(e) {
+            scoredRows.push({ row, itemCount: 0, updatedAt: 0 });
+        }
+    }
+
+    scoredRows.sort((a, b) => {
+        if (b.itemCount !== a.itemCount) return b.itemCount - a.itemCount;
+        return b.updatedAt - a.updatedAt;
+    });
+    return scoredRows[0].row;
+}
+
 function getCurrentAppVersion() {
     if (window.ITEM_FINDER_APP_VERSION) return window.ITEM_FINDER_APP_VERSION;
     const scriptTag = document.querySelector('script[src*="js/script.js"], script[src*="js/rooms.js"], script[src*="js/backup.js"]');
@@ -172,53 +282,31 @@ async function getOrCreateGroup() {
             `${SUPABASE_URL}/rest/v1/user_groups?user_id=eq.${currentUserId}&select=group_id,nickname`,
             { headers }
         );
-        const data = await res.json();
+        const data = await safeJson(res);
 
-        if (data && data.length > 0) {
-            currentGroupId = data[0].group_id;
+        if (res.ok && Array.isArray(data) && data.length > 0) {
+            const bestGroup = await chooseBestGroupMapping(data);
+            currentGroupId = bestGroup.group_id;
             localStorage.setItem('kc_group_id', currentGroupId);
             // 저장된 닉네임이 있으면 자동 복원 (재로그인 시 닉네임 재입력 불필요)
-            if (data[0].nickname && !localStorage.getItem('kc_nickname')) {
-                localStorage.setItem('kc_nickname', data[0].nickname);
+            if (bestGroup.nickname && !localStorage.getItem('kc_nickname')) {
+                localStorage.setItem('kc_nickname', bestGroup.nickname);
             }
             recordUsageEvent('visit').catch(() => {});
             return currentGroupId;
         }
 
-        // 신규 그룹 생성
-        const newGroupId = 'GRP-' + generateId();
-        const nickname = localStorage.getItem('kc_nickname') || '회원';
+        if (!res.ok) {
+            console.warn('[Supabase] 그룹 연결 조회 실패:', data && (data.message || data.code) ? `${data.code || ''} ${data.message || ''}` : res.status);
+        }
 
-        // groups 테이블에 그룹 생성
-        await fetch(`${SUPABASE_URL}/rest/v1/groups`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({
-                group_id: newGroupId,
-                items: JSON.parse(localStorage.getItem('itemFinder_data') || '[]'),
-                rooms: {
-                    list: JSON.parse(localStorage.getItem('itemFinder_rooms') || '[]'),
-                    zones: JSON.parse(localStorage.getItem('itemFinder_zones') || '{}')
-                },
-                backups: JSON.parse(localStorage.getItem('itemFinder_backups') || '[]'),
-                theme: localStorage.getItem('itemFinder_theme') || 'light',
-                updated_at: new Date().toISOString()
-            })
-        });
+        // 매핑이 없거나 조회가 막힌 경우에도 같은 카카오 계정은 같은 개인 그룹을 보게 한다.
+        const fallbackGroupId = currentGroupId || localStorage.getItem('kc_group_id') || getPersonalGroupId();
+        if (!fallbackGroupId) return null;
+        await ensureGroupRow(fallbackGroupId, { allowEmptyCreate: false });
+        await upsertUserGroup(fallbackGroupId);
 
-        // user_groups 테이블에 사용자-그룹 연결
-        await fetch(`${SUPABASE_URL}/rest/v1/user_groups`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({
-                user_id: currentUserId,
-                group_id: newGroupId,
-                nickname,
-                joined_at: new Date().toISOString()
-            })
-        });
-
-        currentGroupId = newGroupId;
+        currentGroupId = fallbackGroupId;
         localStorage.setItem('kc_group_id', currentGroupId);
         recordUsageEvent('signup', { force: true }).catch(() => {});
         return currentGroupId;
